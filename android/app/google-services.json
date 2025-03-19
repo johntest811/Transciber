@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1050902279029",
+    "project_id": "transcriber-database-e36ea",
+    "storage_bucket": "transcriber-database-e36ea.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1050902279029:android:bd7e3df703cc385e7e193c",
+        "android_client_info": {
+          "package_name": "com.example.transcriber"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAjk_oblDAzjoym1XeMJNWGKH7OM2kRlLU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

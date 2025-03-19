@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Transcriber</string>
+    <string name="facebook_app_id">653997773782672</string>
+    <string name="fb_login_protocol_scheme">f3ff17eb1e207eba3998c4d5932a917d</string>
+    <string name="facebook_client_token">9787a0167f254dc89f6cad6d176a158b</string>
+</resources>
