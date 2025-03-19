@@ -59,7 +59,7 @@ class LoginOptions extends StatelessWidget {
 
   // tokenString
 
-  //Faccebook
+  //Faccebook Firebase
   Future<UserCredential?> signInWithFacebook(BuildContext context) async {
     try {
       print("Attempting Facebook login...");
