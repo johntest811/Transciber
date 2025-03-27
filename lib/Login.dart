@@ -7,7 +7,7 @@ import 'home.dart';
 import 'Register.dart';
 import 'LoginOptions.dart';
 import 'ForgetPassword.dart';
-
+import 'Home2.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -316,7 +316,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         if (userCredential != null) {
                           Navigator.pushReplacement(
                             context,
-                            MaterialPageRoute(builder: (context) => Home()),
+                            MaterialPageRoute(builder: (context) => HomeScreen()),
                           );
                         } else {
                           print("Facebook Sign-In failed");
