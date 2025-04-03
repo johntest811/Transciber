@@ -3,11 +3,12 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'home.dart';
+// import 'home.dart';
 import 'Register.dart';
 import 'LoginOptions.dart';
 import 'ForgetPassword.dart';
 import 'Home2.dart';
+import 'test.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -83,7 +84,7 @@ class _LoginScreenState extends State<LoginScreen> {
       if (userCredential.user != null) {
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => Home()),
+          MaterialPageRoute(builder: (context) => TranscriberPage()),
         );
       }
     } on FirebaseAuthException catch (e) {
@@ -304,7 +305,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         if (userCredential != null) {
                           Navigator.pushReplacement(
                             context,
-                            MaterialPageRoute(builder: (context) => Home()),
+                            MaterialPageRoute(builder: (context) => TranscriberPage()),
                           );
                         } else {
                           print("Google Sign-In failed");
@@ -316,7 +317,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         if (userCredential != null) {
                           Navigator.pushReplacement(
                             context,
-                            MaterialPageRoute(builder: (context) => HomeScreen()),
+                            MaterialPageRoute(builder: (context) => TranscriberPage()),
                           );
                         } else {
                           print("Facebook Sign-In failed");

@@ -37,17 +37,22 @@ dependencies:
   google_sign_in: ^6.2.2
   flutter_facebook_auth: ^7.1.1
   http: ^1.3.0
-
+#  flutter_vosk: ^1.0.0
 
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
   permission_handler: ^11.4.0
-  speech_to_text: ^7.0.0
-  file_picker: ^9.2.2
+  avatar_glow: ^2.0.2
+  highlight_text: ^1.7.0
+  file_picker: ^10.0.0
   path_provider: ^2.1.2
-  record: ^4.4.4
+  record: ^6.0.0
+  flutter_sound: ^9.2.13
+  speech_to_text: ^7.0.0
+#  whisper_cpp: ^1.1.0
+
 
 dev_dependencies:
   flutter_test:
@@ -72,6 +77,8 @@ flutter:
   uses-material-design: true
   assets:
     - images/
+#    - assets/models/
+#    - assets/models/whisper.bin
 
   # To add assets to your application, add an assets section, like this:
   # assets:
