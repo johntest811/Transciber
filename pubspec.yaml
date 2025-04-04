@@ -58,7 +58,8 @@ dependencies:
   uuid: ^3.0.7
   just_audio: ^0.9.34
   audio_session: ^0.1.10
-
+  flutter_tts: ^4.0.2
+  intl: ^0.18.1
 
 
 
