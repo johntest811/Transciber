@@ -5,6 +5,7 @@ import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
 import 'Login.dart';
 import 'Register.dart';
 import 'home.dart';
+import 'Home2.dart';
 
 void main() {
   runApp(const MyApp());
@@ -104,7 +105,7 @@ class LoginOptions extends StatelessWidget {
         // Navigate to Home only if authentication is successful
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => Home()),
+          MaterialPageRoute(builder: (context) => HomeScreen()),
         );
       }
 
@@ -162,7 +163,7 @@ class LoginOptions extends StatelessWidget {
                     print("Navigating to Home...");
                     Navigator.pushReplacement(
                       context,
-                      MaterialPageRoute(builder: (context) => Home()),
+                      MaterialPageRoute(builder: (context) => HomeScreen()),
                     );
                   } else {
                     print("Facebook Sign-In failed.");
@@ -184,7 +185,7 @@ class LoginOptions extends StatelessWidget {
                   if (userCredential != null) {
                     Navigator.pushReplacement(
                       context,
-                      MaterialPageRoute(builder: (context) => Home()),
+                      MaterialPageRoute(builder: (context) => HomeScreen()),
                     );
                   } else {
                     print("Google Sign-In failed");
