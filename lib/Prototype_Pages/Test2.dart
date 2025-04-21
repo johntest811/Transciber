@@ -4,7 +4,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:audio_session/audio_session.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'assemblyai_service.dart';
+import '/assemblyai_service.dart';
 
 void main() {
   runApp(const MyApp());

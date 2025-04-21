@@ -31,7 +31,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   Future<void> _register() async {
     setState(() {
       _errorMessage = null;
-      _isLoading = false; // Set loading state to true at the start
+      _isLoading = true;
     });
 
     String firstName = _firstNameController.text.trim();
@@ -41,7 +41,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
     String password = _passwordController.text.trim();
     String confirmPassword = _confirmPasswordController.text.trim();
 
-    if (firstName.isEmpty || lastName.isEmpty || username.isEmpty || email.isEmpty || password.isEmpty || confirmPassword.isEmpty) {
+    // Validation checks
+    if (firstName.isEmpty || lastName.isEmpty || username.isEmpty ||
+        email.isEmpty || password.isEmpty || confirmPassword.isEmpty) {
       setState(() {
         _errorMessage = "Please fill in all fields.";
         _isLoading = false;
@@ -58,68 +60,74 @@ class _RegisterScreenState extends State<RegisterScreen> {
     }
 
     try {
-      print("Attempting to register user...");
-
+      // 1. Create user in Firebase Authentication
       UserCredential userCredential = await _auth.createUserWithEmailAndPassword(
         email: email,
         password: password,
       );
 
-      print("User registered successfully: ${userCredential.user?.uid}");
-
+      // 2. Store additional user data in Firestore
       if (userCredential.user != null) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const SuccessScreen()),
-        );
         await _firestore.collection("users").doc(userCredential.user!.uid).set({
           'firstName': firstName,
           'lastName': lastName,
-          'username': username,
+          'username': username.toLowerCase(), // Store lowercase for case-insensitive queries
           'email': email,
           'createdAt': Timestamp.now(),
-
-
+          'uid': userCredential.user!.uid, // Store the UID for easy reference
         });
 
+        // 3. Navigate to success screen after successful registration
+        if (mounted) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const SuccessScreen()),
+          );
+        }
       }
     } on FirebaseAuthException catch (e) {
-      print("FirebaseAuthException: ${e.message}");
+      String errorMessage;
+      switch (e.code) {
+        case 'email-already-in-use':
+          errorMessage = "The email address is already in use.";
+          break;
+        case 'invalid-email':
+          errorMessage = "The email address is not valid.";
+          break;
+        case 'weak-password':
+          errorMessage = "The password is too weak.";
+          break;
+        default:
+          errorMessage = e.message ?? "Registration failed. Please try again.";
+      }
+
       if (mounted) {
         setState(() {
-          _errorMessage = e.message ?? "Registration failed. Please try again.";
+          _errorMessage = errorMessage;
           _isLoading = false;
         });
       }
     } catch (e) {
-      print("Unexpected error: $e");
       if (mounted) {
         setState(() {
           _errorMessage = "Something went wrong. Please try again.";
-          _isLoading = false; // Ensure this is set
+          _isLoading = false;
         });
       }
     }
-
   }
 
 
-  //Google Login
+// Update the Google sign-in method
   Future<UserCredential?> signInWithGoogle() async {
     try {
       final GoogleSignIn googleSignIn = GoogleSignIn();
-
-      // Ensure a fresh sign-in by signing out first
       await googleSignIn.signOut();
 
       final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
-      if (googleUser == null) {
-        print("Google Sign-In Cancelled");
-        return null;
-      }
+      if (googleUser == null) return null;
 
       final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
-
       final AuthCredential credential = GoogleAuthProvider.credential(
         accessToken: googleAuth.accessToken,
         idToken: googleAuth.idToken,
@@ -127,7 +135,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
       UserCredential userCredential = await FirebaseAuth.instance.signInWithCredential(credential);
 
-      print("Signed in as: ${userCredential.user?.displayName}");
+      // Update user profile with Google info if needed
+      if (userCredential.user != null && userCredential.user!.displayName == null) {
+        await userCredential.user!.updateDisplayName(googleUser.displayName);
+        await userCredential.user!.reload();
+      }
+
       return userCredential;
     } catch (e) {
       print("Google Sign-In Error: $e");
@@ -135,10 +148,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     }
   }
 
-
-
-
-  //Faccebook
+// Update the Facebook sign-in method
   Future<UserCredential?> signInWithFacebook() async {
     try {
       final LoginResult result = await FacebookAuth.instance.login(
@@ -146,17 +156,21 @@ class _RegisterScreenState extends State<RegisterScreen> {
       );
 
       if (result.status != LoginStatus.success || result.accessToken == null) {
-        throw FirebaseAuthException(
-          code: "MISSING_FACEBOOK_TOKEN",
-          message: "Facebook authentication failed. Missing token.",
-        );
+        return null;
       }
 
       final AccessToken accessToken = result.accessToken!;
       final OAuthCredential credential = FacebookAuthProvider.credential(accessToken.tokenString);
+      UserCredential userCredential = await FirebaseAuth.instance.signInWithCredential(credential);
 
+      // Get additional Facebook user info
+      final userData = await FacebookAuth.instance.getUserData();
+      if (userCredential.user != null && userCredential.user!.displayName == null) {
+        await userCredential.user!.updateDisplayName(userData['name']);
+        await userCredential.user!.reload();
+      }
 
-      return await FirebaseAuth.instance.signInWithCredential(credential);
+      return userCredential;
     } catch (e) {
       print("Facebook Sign-In Error: $e");
       return null;

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
 import 'Login.dart';
-import 'Register.dart';
 
 class SuccessScreen extends StatefulWidget {
   const SuccessScreen({super.key});
@@ -15,9 +14,9 @@ class _SuccessScreenState extends State<SuccessScreen> {
   void initState() {
     super.initState();
 
-    Future.delayed(const Duration(seconds: 2), () {
+    // Redirect to login after 2 seconds
+    Timer(const Duration(seconds: 2), () {
       if (mounted) {
-        print("➡ Redirecting to LoginScreen...");
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(builder: (context) => const LoginScreen()),
         );
@@ -33,7 +32,7 @@ class _SuccessScreenState extends State<SuccessScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.check_circle, color: Colors.green, size: 100),
+            const Icon(Icons.check_circle, color: Colors.green, size: 100),
             const SizedBox(height: 20),
             const Text(
               "Success!",

@@ -3,12 +3,11 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
-// import 'home.dart';
+import 'home.dart';
 import 'Register.dart';
 import 'LoginOptions.dart';
 import 'ForgetPassword.dart';
-import 'Home2.dart';
-import 'test.dart';
+
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -84,7 +83,7 @@ class _LoginScreenState extends State<LoginScreen> {
       if (userCredential.user != null) {
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => TranscriberPage()),
+          MaterialPageRoute(builder: (context) => Home()),
         );
       }
     } on FirebaseAuthException catch (e) {
@@ -105,22 +104,16 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
 
-  //GOOGLE SINGLE SIGN ON
+// Update the Google sign-in method
   Future<UserCredential?> signInWithGoogle() async {
     try {
       final GoogleSignIn googleSignIn = GoogleSignIn();
-
-      // Ensure a fresh sign-in by signing out first
       await googleSignIn.signOut();
 
       final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
-      if (googleUser == null) {
-        print("Google Sign-In Cancelled");
-        return null;
-      }
+      if (googleUser == null) return null;
 
       final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
-
       final AuthCredential credential = GoogleAuthProvider.credential(
         accessToken: googleAuth.accessToken,
         idToken: googleAuth.idToken,
@@ -128,7 +121,12 @@ class _LoginScreenState extends State<LoginScreen> {
 
       UserCredential userCredential = await FirebaseAuth.instance.signInWithCredential(credential);
 
-      print("Signed in as: ${userCredential.user?.displayName}");
+      // Update user profile with Google info if needed
+      if (userCredential.user != null && userCredential.user!.displayName == null) {
+        await userCredential.user!.updateDisplayName(googleUser.displayName);
+        await userCredential.user!.reload();
+      }
+
       return userCredential;
     } catch (e) {
       print("Google Sign-In Error: $e");
@@ -136,8 +134,7 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-
-  //Faccebook SINGLE SIGN ON
+// Update the Facebook sign-in method
   Future<UserCredential?> signInWithFacebook() async {
     try {
       final LoginResult result = await FacebookAuth.instance.login(
@@ -145,17 +142,21 @@ class _LoginScreenState extends State<LoginScreen> {
       );
 
       if (result.status != LoginStatus.success || result.accessToken == null) {
-        throw FirebaseAuthException(
-          code: "MISSING_FACEBOOK_TOKEN",
-          message: "Facebook authentication failed. Missing token.",
-        );
+        return null;
       }
 
       final AccessToken accessToken = result.accessToken!;
       final OAuthCredential credential = FacebookAuthProvider.credential(accessToken.tokenString);
+      UserCredential userCredential = await FirebaseAuth.instance.signInWithCredential(credential);
 
+      // Get additional Facebook user info
+      final userData = await FacebookAuth.instance.getUserData();
+      if (userCredential.user != null && userCredential.user!.displayName == null) {
+        await userCredential.user!.updateDisplayName(userData['name']);
+        await userCredential.user!.reload();
+      }
 
-      return await FirebaseAuth.instance.signInWithCredential(credential);
+      return userCredential;
     } catch (e) {
       print("Facebook Sign-In Error: $e");
       return null;
@@ -305,7 +306,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         if (userCredential != null) {
                           Navigator.pushReplacement(
                             context,
-                            MaterialPageRoute(builder: (context) => TranscriberPage()),
+                            MaterialPageRoute(builder: (context) => Home()),
                           );
                         } else {
                           print("Google Sign-In failed");
@@ -317,7 +318,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         if (userCredential != null) {
                           Navigator.pushReplacement(
                             context,
-                            MaterialPageRoute(builder: (context) => TranscriberPage()),
+                            MaterialPageRoute(builder: (context) => Home()),
                           );
                         } else {
                           print("Facebook Sign-In failed");
