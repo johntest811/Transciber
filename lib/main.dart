@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'LoginOptions.dart';
 import 'theme_provider.dart';
+import 'WelcomeScreen.dart'; // Add this import
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -27,7 +28,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData.light(),
       darkTheme: ThemeData.dark(),
       themeMode: themeProvider.themeMode,
-      home: LoginOptions(),
+      home: const WelcomeScreen(), // Change this to WelcomeScreen
     );
   }
 }

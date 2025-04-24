@@ -11,15 +11,7 @@ import 'theme_provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
-
-void main() {
-  runApp(
-    ChangeNotifierProvider(
-      create: (context) => ThemeProvider(),
-      child: const TexttovoicePage(),
-    ),
-  );
-}
+import 'package:path/path.dart' as path;
 
 class TexttovoicePage extends StatelessWidget {
   const TexttovoicePage({super.key});
@@ -27,7 +19,7 @@ class TexttovoicePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Advanced TTS App',
+      title: 'Text to Speech',
       theme: ThemeData.light(),
       darkTheme: ThemeData.dark(),
       themeMode: Provider.of<ThemeProvider>(context).themeMode,
@@ -49,12 +41,14 @@ class _TTSHomePageState extends State<TTSHomePage> {
   final TextEditingController textController = TextEditingController();
   bool isSpeaking = false;
   bool isSaving = false;
+  bool isSavingToHistory = false;
   double volume = 1.0;
   double pitch = 1.0;
   double rate = 0.5;
   String? selectedLanguage;
   List<Map<String, String>> languages = [];
   String? savePath;
+  String? savedFileName;
 
   // Firebase instances
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -94,225 +88,27 @@ class _TTSHomePageState extends State<TTSHomePage> {
 
   Future<void> _loadLanguages() async {
     try {
-      // Get available languages from the TTS engine
-      final availableLanguages = (await flutterTts.getLanguages as List<dynamic>?)?.cast<String>() ?? [];
-
-      // Create a comprehensive list of all possible languages with their display names
-      final allLanguages = {
-        'af': 'Afrikaans',
-        'sq': 'Albanian',
-        'am': 'Amharic',
-        'ar': 'Arabic',
-        'hy': 'Armenian',
-        'az': 'Azerbaijani',
-        'eu': 'Basque',
-        'be': 'Belarusian',
-        'bn': 'Bengali',
-        'bs': 'Bosnian',
-        'bg': 'Bulgarian',
-        'my': 'Burmese',
-        'ca': 'Catalan',
-        'ceb': 'Cebuano',
-        'zh': 'Chinese',
-        'co': 'Corsican',
-        'hr': 'Croatian',
-        'cs': 'Czech',
-        'da': 'Danish',
-        'nl': 'Dutch',
-        'en': 'English',
-        'eo': 'Esperanto',
-        'et': 'Estonian',
-        'fi': 'Finnish',
-        'fr': 'French',
-        'fy': 'Frisian',
-        'gl': 'Galician',
-        'ka': 'Georgian',
-        'de': 'German',
-        'el': 'Greek',
-        'gu': 'Gujarati',
-        'ht': 'Haitian Creole',
-        'ha': 'Hausa',
-        'haw': 'Hawaiian',
-        'he': 'Hebrew',
-        'hi': 'Hindi',
-        'hmn': 'Hmong',
-        'hu': 'Hungarian',
-        'is': 'Icelandic',
-        'ig': 'Igbo',
-        'id': 'Indonesian',
-        'ga': 'Irish',
-        'it': 'Italian',
-        'ja': 'Japanese',
-        'jv': 'Javanese',
-        'kn': 'Kannada',
-        'kk': 'Kazakh',
-        'km': 'Khmer',
-        'rw': 'Kinyarwanda',
-        'ko': 'Korean',
-        'ku': 'Kurdish',
-        'ky': 'Kyrgyz',
-        'lo': 'Lao',
-        'la': 'Latin',
-        'lv': 'Latvian',
-        'lt': 'Lithuanian',
-        'lb': 'Luxembourgish',
-        'mk': 'Macedonian',
-        'mg': 'Malagasy',
-        'ms': 'Malay',
-        'ml': 'Malayalam',
-        'mt': 'Maltese',
-        'mi': 'Maori',
-        'mr': 'Marathi',
-        'mn': 'Mongolian',
-        'ne': 'Nepali',
-        'no': 'Norwegian',
-        'ny': 'Nyanja',
-        'or': 'Odia',
-        'ps': 'Pashto',
-        'fa': 'Persian',
-        'pl': 'Polish',
-        'pt': 'Portuguese',
-        'pa': 'Punjabi',
-        'ro': 'Romanian',
-        'ru': 'Russian',
-        'sm': 'Samoan',
-        'gd': 'Scots Gaelic',
-        'sr': 'Serbian',
-        'st': 'Sesotho',
-        'sn': 'Shona',
-        'sd': 'Sindhi',
-        'si': 'Sinhala',
-        'sk': 'Slovak',
-        'sl': 'Slovenian',
-        'so': 'Somali',
-        'es': 'Spanish',
-        'su': 'Sundanese',
-        'sw': 'Swahili',
-        'sv': 'Swedish',
-        'tl': 'Tagalog',
-        'tg': 'Tajik',
-        'ta': 'Tamil',
-        'tt': 'Tatar',
-        'te': 'Telugu',
-        'th': 'Thai',
-        'tr': 'Turkish',
-        'tk': 'Turkmen',
-        'uk': 'Ukrainian',
-        'ur': 'Urdu',
-        'ug': 'Uyghur',
-        'uz': 'Uzbek',
-        'vi': 'Vietnamese',
-        'cy': 'Welsh',
-        'xh': 'Xhosa',
-        'yi': 'Yiddish',
-        'yo': 'Yoruba',
-        'zu': 'Zulu',
-      };
-
-      // Filter to only include languages that are available on the device
-      final supportedLanguages = <String, String>{};
-      for (final code in availableLanguages) {
-        final baseCode = code.split('-').first.toLowerCase();
-        if (allLanguages.containsKey(baseCode)) {
-          supportedLanguages[baseCode] = allLanguages[baseCode]!;
-        }
-      }
-
-      // Add any remaining languages from our comprehensive list that might not be detected
-      for (final entry in allLanguages.entries) {
-        if (!supportedLanguages.containsKey(entry.key)) {
-          supportedLanguages[entry.key] = entry.value;
-        }
-      }
+      final supportedLanguages = [
+        {'code': 'en-US', 'name': 'English (US)'},
+        {'code': 'en-GB', 'name': 'English (UK)'},
+        {'code': 'es-ES', 'name': 'Spanish (Spain)'},
+        {'code': 'fr-FR', 'name': 'French (France)'},
+        {'code': 'de-DE', 'name': 'German (Germany)'},
+        {'code': 'it-IT', 'name': 'Italian (Italy)'},
+        {'code': 'pt-BR', 'name': 'Portuguese (Brazil)'},
+      ];
 
       setState(() {
-        languages = supportedLanguages.entries.map((entry) {
+        languages = supportedLanguages.map((lang) {
           return <String, String>{
-            'code': entry.key,
-            'displayName': entry.value,
+            'code': lang['code']!,
+            'displayName': lang['name']!,
           };
-        }).toList()
-          ..sort((a, b) {
-            // Put Tagalog first
-            if (a['code'] == 'tl') return -1;
-            if (b['code'] == 'tl') return 1;
-            // Then sort the rest alphabetically
-            return a['displayName']!.compareTo(b['displayName']!);
-          });
-
-        // Set default language to Tagalog if available, otherwise first language
-        selectedLanguage = languages.firstWhere(
-              (lang) => lang['code'] == 'tl',
-          orElse: () => languages.first,
-        )['code'];
+        }).toList();
+        selectedLanguage = 'en-US';
       });
     } catch (e) {
       _showSnackBar('Error loading languages: $e');
-    }
-  }
-
-  Future<void> _playSavedAudio() async {
-    if (savePath == null) return;
-
-    try {
-      _showSnackBar('Playing saved audio...');
-      // You would typically use a package like audioplayers here
-      // Example: await AudioPlayer().play(DeviceFileSource(savePath!));
-    } catch (e) {
-      _showSnackBar('Error playing audio: $e');
-    }
-  }
-
-  Future<bool> _setLanguage(String? languageCode) async {
-    if (languageCode == null) {
-      languageCode = 'en'; // Default to English
-    }
-
-    try {
-      // First try the exact language code
-      var result = await flutterTts.setLanguage(languageCode);
-
-      // If that fails, try appending a country code
-      if (result != 1) {
-        if (languageCode == 'tl') {
-          // Special case for Tagalog - try Philippines variant
-          result = await flutterTts.setLanguage('tl-PH');
-        } else {
-          // For other languages, try with US/UK variants
-          result = await flutterTts.setLanguage('${languageCode}-US');
-          if (result != 1) {
-            result = await flutterTts.setLanguage('${languageCode}-GB');
-          }
-        }
-      }
-
-      if (result != 1) {
-        _showSnackBar('Language $languageCode not supported, using default');
-        return false;
-      }
-      return true;
-    } catch (e) {
-      _showSnackBar('Error setting language: $e');
-      return false;
-    }
-  }
-
-  String? _findBestLanguageMatch() {
-    try {
-      final systemLocale = Platform.localeName.split('_').first.toLowerCase();
-
-      // First try exact match
-      for (var lang in languages) {
-        if (lang['code']?.toLowerCase() == systemLocale) {
-          return lang['code'];
-        }
-      }
-
-      // Fallback to English
-      return 'en';
-    } catch (e) {
-      _showSnackBar('Error detecting system language: $e');
-      return 'en';
     }
   }
 
@@ -323,15 +119,9 @@ class _TTSHomePageState extends State<TTSHomePage> {
     }
 
     try {
-      if (!await _setLanguage(selectedLanguage)) {
-        // If language setting failed, try with default
-        await _setLanguage(null);
+      if (selectedLanguage != null) {
+        await flutterTts.setLanguage(selectedLanguage!);
       }
-
-      await flutterTts.setVolume(volume);
-      await flutterTts.setPitch(pitch);
-      await flutterTts.setSpeechRate(rate);
-
       await flutterTts.speak(textController.text);
     } catch (e) {
       _showSnackBar('Error speaking: $e');
@@ -355,7 +145,6 @@ class _TTSHomePageState extends State<TTSHomePage> {
       return;
     }
 
-    // Check and request storage permission
     var status = await Permission.manageExternalStorage.status;
     if (!status.isGranted) {
       status = await Permission.manageExternalStorage.request();
@@ -370,58 +159,84 @@ class _TTSHomePageState extends State<TTSHomePage> {
     });
 
     try {
-      // Get downloads directory for better compatibility
-      final directory = await getDownloadsDirectory();
-      final fileName = 'tts_${DateTime.now().millisecondsSinceEpoch}.mp3';
-      final filePath = '${directory?.path}/$fileName';
+      final directory = await getApplicationDocumentsDirectory();
+      final timestamp = DateTime.now().millisecondsSinceEpoch;
+      // Use consistent naming pattern that matches what the system generates
+      final baseFileName = '$timestamp.mp3';
+      final filePath = path.join(directory.path, baseFileName);
 
-      // Set language if selected
-      if (selectedLanguage != null) {
-        await flutterTts.setLanguage(selectedLanguage!);
-      } else {
-        final defaultLanguage = _findBestLanguageMatch();
-        if (defaultLanguage != null) {
-          await flutterTts.setLanguage(defaultLanguage);
-        }
-      }
+      debugPrint('Attempting to save to: $filePath');
 
-      // Set speech parameters
-      await flutterTts.setVolume(volume);
-      await flutterTts.setPitch(pitch);
-      await flutterTts.setSpeechRate(rate);
-
-      // Synthesize to file
       final result = await flutterTts.synthesizeToFile(
         textController.text,
         filePath,
       );
 
-      // Update your _saveToFile method to also save to Firestore
       if (result == 1) {
-        final user = _auth.currentUser;
-        if (user != null) {
-          await _firestore.collection('users').doc(user.uid).collection('tts').add({
-            'title': 'TTS ${DateFormat('MMM d').format(DateTime.now())}',
-            'text': textController.text,
-            'words': textController.text.split(RegExp(r'\s+')).where((word) => word.isNotEmpty).length,
-            'date': DateFormat('MMM d').format(DateTime.now()),
-            'timestamp': FieldValue.serverTimestamp(),
-            'audioPath': filePath,
-            'language': selectedLanguage,
-          });
+        debugPrint('File saved successfully at: $filePath');
+        final file = File(filePath);
+        final exists = await file.exists();
+        debugPrint('File verification: $exists');
+        if (exists) {
+          debugPrint('File size: ${(await file.length()).toString()} bytes');
         }
 
         setState(() {
           savePath = filePath;
+          savedFileName = baseFileName; // Store the complete filename
         });
-        _showSnackBar('Audio saved to $filePath');
+        _showSnackBar('Audio saved to device');
+      } else {
+        _showSnackBar('Failed to save audio file');
       }
-
     } catch (e) {
+      debugPrint('Error saving audio: $e');
       _showSnackBar('Error saving audio: $e');
     } finally {
       setState(() {
         isSaving = false;
+      });
+    }
+  }
+
+  Future<void> _saveToHistory() async {
+    if (textController.text.isEmpty) {
+      _showSnackBar('Please enter some text');
+      return;
+    }
+
+    if (savedFileName == null) {
+      _showSnackBar('Please save the audio file first');
+      return;
+    }
+
+    setState(() {
+      isSavingToHistory = true;
+    });
+
+    try {
+      final user = _auth.currentUser;
+      if (user != null) {
+        debugPrint('Saving to history with filename: $savedFileName');
+        await _firestore.collection('users').doc(user.uid).collection('tts').add({
+          'title': 'TTS ${DateFormat('MMM d').format(DateTime.now())}',
+          'text': textController.text,
+          'words': textController.text.split(RegExp(r'\s+')).where((word) => word.isNotEmpty).length,
+          'date': DateFormat('MMM d').format(DateTime.now()),
+          'timestamp': FieldValue.serverTimestamp(),
+          'audioFileName': savedFileName, // This is the correct field name
+          'language': selectedLanguage,
+        });
+        _showSnackBar('Saved to history');
+      } else {
+        _showSnackBar('Please log in to save to history');
+      }
+    } catch (e) {
+      debugPrint('Error saving to history: $e');
+      _showSnackBar('Error saving to history: $e');
+    } finally {
+      setState(() {
+        isSavingToHistory = false;
       });
     }
   }
@@ -443,22 +258,13 @@ class _TTSHomePageState extends State<TTSHomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Advanced TTS App'),
+        title: const Text('Text to Speech'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.of(context).pushReplacement(
             MaterialPageRoute(builder: (context) => Home()),
           ),
         ),
-        actions: [
-          if (savePath != null)
-            IconButton(
-              icon: const Icon(Icons.play_arrow),
-              onPressed: () {
-                _showSnackBar('Playing: $savePath');
-              },
-            ),
-        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
@@ -480,44 +286,24 @@ class _TTSHomePageState extends State<TTSHomePage> {
               decoration: InputDecoration(
                 labelText: 'Select Language',
                 border: const OutlineInputBorder(),
-                labelStyle: TextStyle(
-                  color: Theme.of(context).textTheme.bodyLarge?.color,
-                ),
               ),
               dropdownColor: Theme.of(context).cardColor,
               items: languages.map((language) {
                 return DropdownMenuItem<String>(
                   value: language['code'],
-                  child: Text(
-                    language['displayName']!,
-                    style: TextStyle(
-                      color: Theme.of(context).textTheme.bodyLarge?.color,
-                    ),
-                  ),
+                  child: Text(language['displayName']!),
                 );
               }).toList(),
-              onChanged: (value) async {
-                if (value == null) return;
-
+              onChanged: (value) {
                 setState(() {
                   selectedLanguage = value;
                 });
-                // Immediately test the voice when language changes
-                if (textController.text.isNotEmpty) {
-                  await flutterTts.stop();
-                  if (await _setLanguage(value)) {
-                    await flutterTts.speak('Hello'); // Test phrase
-                  }
-                }
               },
               isExpanded: true,
-              style: TextStyle(
-                color: Theme.of(context).textTheme.bodyLarge?.color,
-              ),
             ),
+
             const SizedBox(height: 20),
 
-            // Speech Settings
             Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -564,28 +350,27 @@ class _TTSHomePageState extends State<TTSHomePage> {
             ),
             const SizedBox(height: 20),
 
-            // Action Buttons
             Row(
               children: [
                 Expanded(
                   child: ElevatedButton(
                     onPressed: isSpeaking ? _stop : _speak,
-                    style: ElevatedButton.styleFrom(
-                      minimumSize: const Size(double.infinity, 50),
-                    ),
                     child: Text(
                       isSpeaking ? 'Stop Speaking' : 'Speak',
                       style: const TextStyle(fontSize: 18),
                     ),
                   ),
                 ),
-                const SizedBox(width: 10),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Row(
+              children: [
                 Expanded(
                   child: ElevatedButton(
                     onPressed: isSaving ? null : _saveToFile,
                     style: ElevatedButton.styleFrom(
-                      minimumSize: const Size(double.infinity, 50),
-                      backgroundColor: Colors.green,
+                      backgroundColor: Colors.blue,
                     ),
                     child: isSaving
                         ? const CircularProgressIndicator(color: Colors.white)
@@ -595,36 +380,23 @@ class _TTSHomePageState extends State<TTSHomePage> {
                     ),
                   ),
                 ),
-              ],
-            ),
-
-            // Saved file info
-            if (savePath != null) ...[
-              const SizedBox(height: 20),
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(12.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Last saved audio:',
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        File(savePath!).uri.pathSegments.last,
-                        style: const TextStyle(color: Colors.blue),
-                      ),
-                      Text(
-                        savePath!,
-                        style: Theme.of(context).textTheme.bodySmall,
-                      ),
-                    ],
+                const SizedBox(width: 10),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: isSavingToHistory ? null : _saveToHistory,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green,
+                    ),
+                    child: isSavingToHistory
+                        ? const CircularProgressIndicator(color: Colors.white)
+                        : const Text(
+                      'Save to History',
+                      style: TextStyle(fontSize: 18, color: Colors.white),
+                    ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ],
         ),
       ),
