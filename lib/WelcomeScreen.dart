@@ -25,8 +25,8 @@ class WelcomeScreen extends StatelessWidget {
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              Colors.grey[900]!,
-              Colors.grey[850]!,
+              Colors.black!,
+              Colors.black!,
             ],
           ),
         ),
