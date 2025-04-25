@@ -42,7 +42,7 @@ class WelcomeScreen extends StatelessWidget {
                     height: 350, // Slightly reduced height
                     margin: const EdgeInsets.only(bottom: 10), // Reduced from 40
                     child: Image.asset(
-                      'images/Robot.png',
+                      'assets/Robot.json',
                       fit: BoxFit.contain,
                       filterQuality: FilterQuality.low,
                       frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
