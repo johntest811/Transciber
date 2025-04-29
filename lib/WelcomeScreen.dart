@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lottie/lottie.dart'; // Add this import
 import 'package:provider/provider.dart';
 import 'LoginOptions.dart';
 import 'theme_provider.dart';
@@ -20,13 +21,13 @@ class WelcomeScreen extends StatelessWidget {
 
     return Scaffold(
       body: Container(
-        decoration: BoxDecoration(
+        decoration: const BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              Colors.black!,
-              Colors.black!,
+              Colors.black,
+              Colors.black,
             ],
           ),
         ),
@@ -37,24 +38,16 @@ class WelcomeScreen extends StatelessWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  // Image with reduced bottom margin
+                  // Lottie animation container
                   Container(
-                    height: 350, // Slightly reduced height
-                    margin: const EdgeInsets.only(bottom: 10), // Reduced from 40
-                    child: Image.asset(
-                      'assets/Robot.json',
+                    height: 350,
+                    margin: const EdgeInsets.only(bottom: 10),
+                    child: Lottie.asset(
+                      'assets/Robot.json', // Path to your Lottie JSON file
                       fit: BoxFit.contain,
-                      filterQuality: FilterQuality.low,
-                      frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
-                        if (frame == null) {
-                          return Center(
-                            child: CircularProgressIndicator(
-                              valueColor: AlwaysStoppedAnimation(Colors.blueAccent),
-                            ),
-                          );
-                        }
-                        return child;
-                      },
+                      repeat: true,
+                      animate: true,
+                      frameRate: FrameRate.max,
                       errorBuilder: (context, error, stackTrace) {
                         return Icon(
                           Icons.smart_toy,
@@ -74,17 +67,17 @@ class WelcomeScreen extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
-                        height: 1.2, // Tighter line height
+                        height: 1.2,
                       ),
                       textAlign: TextAlign.center,
                     ),
                   ),
 
-                  const SizedBox(height: 20), // Reduced from 40
+                  const SizedBox(height: 20),
 
                   // Button with tighter padding
                   Container(
-                    margin: const EdgeInsets.only(top: 20), // Added top margin instead of SizedBox
+                    margin: const EdgeInsets.only(top: 20),
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(8),
                       gradient: blueGradient,
@@ -106,8 +99,8 @@ class WelcomeScreen extends StatelessWidget {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(
-                          vertical: 14, // Reduced from 18
-                          horizontal: 30, // Reduced from 36
+                          vertical: 14,
+                          horizontal: 30,
                         ),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
@@ -120,7 +113,7 @@ class WelcomeScreen extends StatelessWidget {
                         child: const Text(
                           'Get Started',
                           style: TextStyle(
-                            fontSize: 16, // Slightly smaller
+                            fontSize: 16,
                             fontWeight: FontWeight.bold,
                           ),
                         ),

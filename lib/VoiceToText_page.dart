@@ -227,7 +227,6 @@ class _SpeechScreenState extends State<SpeechScreen> {
     );
   }
 
-  // Add these to your _SpeechScreenState class
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
@@ -241,7 +240,6 @@ class _SpeechScreenState extends State<SpeechScreen> {
       // Count words
       final wordCount = _text.split(RegExp(r'\s+')).where((word) => word.isNotEmpty).length;
 
-      // Update your _saveRecording method to include audioPath if you're saving audio files
       await _firestore.collection('users').doc(user.uid).collection('recordings').add({
         'title': 'Recording ${DateFormat('MMM d').format(DateTime.now())}',
         'text': _text,
@@ -249,7 +247,6 @@ class _SpeechScreenState extends State<SpeechScreen> {
         'date': DateFormat('MMM d').format(DateTime.now()),
         'timestamp': FieldValue.serverTimestamp(),
         'language': _selectedLanguage,
-        // 'audioPath': pathToAudioFile, // Add this if you save audio files
       });
 
       ScaffoldMessenger.of(context).showSnackBar(
@@ -261,7 +258,6 @@ class _SpeechScreenState extends State<SpeechScreen> {
       );
     }
   }
-
 
   void _showLanguageDialog() {
     showDialog(
@@ -334,7 +330,7 @@ class _SpeechScreenState extends State<SpeechScreen> {
           ),
           IconButton(
             icon: Icon(Icons.save),
-            onPressed: _text.isNotEmpty ?  _saveRecording : null,
+            onPressed: _text.isNotEmpty ? _saveRecording : null,
             tooltip: 'Save to file',
           ),
         ],
@@ -358,7 +354,7 @@ class _SpeechScreenState extends State<SpeechScreen> {
                   ),
                   SizedBox(width: 10),
                   ElevatedButton(
-                    onPressed: _text.isNotEmpty ?  _saveRecording : null,
+                    onPressed: _text.isNotEmpty ? _saveRecording : null,
                     child: Text('Save'),
                     style: ElevatedButton.styleFrom(
                       padding: EdgeInsets.symmetric(horizontal: 20),
@@ -404,7 +400,9 @@ class _SpeechScreenState extends State<SpeechScreen> {
             words: _highlights,
             textStyle: TextStyle(
               fontSize: 32.0,
-              color: Colors.black,
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? Colors.white
+                  : Colors.black,
               fontWeight: FontWeight.w400,
             ),
           ),
