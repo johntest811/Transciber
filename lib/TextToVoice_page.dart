@@ -149,7 +149,7 @@ class _TTSHomePageState extends State<TTSHomePage> {
     if (!status.isGranted) {
       status = await Permission.manageExternalStorage.request();
       if (!status.isGranted) {
-        _showSnackBar('Storage permission is required to save audio files');
+        _showSnackBarWithSettings('Storage permission is required to save audio files');
         return;
       }
     }
@@ -159,11 +159,20 @@ class _TTSHomePageState extends State<TTSHomePage> {
     });
 
     try {
-      final directory = await getApplicationDocumentsDirectory();
       final timestamp = DateTime.now().millisecondsSinceEpoch;
-      // Use consistent naming pattern that matches what the system generates
-      final baseFileName = '$timestamp.mp3';
-      final filePath = path.join(directory.path, baseFileName);
+      final baseFileName = 'TTS_$timestamp.mp3';
+      String filePath;
+
+      if (Platform.isAndroid) {
+        final musicDir = Directory('/storage/emulated/0/Music');
+        if (!await musicDir.exists()) {
+          await musicDir.create(recursive: true);
+        }
+        filePath = path.join(musicDir.path, baseFileName);
+      } else {
+        final directory = await getApplicationDocumentsDirectory();
+        filePath = path.join(directory.path, baseFileName);
+      }
 
       debugPrint('Attempting to save to: $filePath');
 
@@ -183,9 +192,9 @@ class _TTSHomePageState extends State<TTSHomePage> {
 
         setState(() {
           savePath = filePath;
-          savedFileName = baseFileName; // Store the complete filename
+          savedFileName = baseFileName;
         });
-        _showSnackBar('Audio saved to device');
+        _showSnackBar('Audio saved to Music directory');
       } else {
         _showSnackBar('Failed to save audio file');
       }
@@ -197,6 +206,20 @@ class _TTSHomePageState extends State<TTSHomePage> {
         isSaving = false;
       });
     }
+  }
+
+  void _showSnackBarWithSettings(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        action: SnackBarAction(
+          label: 'Settings',
+          onPressed: () {
+            openAppSettings();
+          },
+        ),
+      ),
+    );
   }
 
   Future<void> _saveToHistory() async {
@@ -224,7 +247,7 @@ class _TTSHomePageState extends State<TTSHomePage> {
           'words': textController.text.split(RegExp(r'\s+')).where((word) => word.isNotEmpty).length,
           'date': DateFormat('MMM d').format(DateTime.now()),
           'timestamp': FieldValue.serverTimestamp(),
-          'audioFileName': savedFileName, // This is the correct field name
+          'audioFilePath': savePath, // Store the full path instead of just the filename
           'language': selectedLanguage,
         });
         _showSnackBar('Saved to history');

@@ -53,6 +53,8 @@ dependencies {
     implementation(platform("com.google.firebase:firebase-bom:33.10.0"))
 
 
+    implementation ("com.google.firebase:firebase-functions")
+    implementation ("androidx.multidex:multidex:2.0.1")
     // TODO: Add the dependencies for Firebase products you want to use
     // When using the BoM, don't specify versions in Firebase dependencies
     implementation("com.google.firebase:firebase-analytics")

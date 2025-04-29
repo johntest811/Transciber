@@ -27,9 +27,31 @@ class _SettingsPageState extends State<SettingsPage> {
   @override
   void initState() {
     super.initState();
+    _usernameController = TextEditingController();
+    _loadUserData();
+  }
+
+  Future<void> _loadUserData() async {
     final user = _auth.currentUser;
-    _usernameController = TextEditingController(text: user?.displayName ?? '');
-    _profileImageUrl = user?.photoURL;
+    if (user == null) return;
+
+    setState(() => _isLoading = true);
+
+    try {
+      final userDoc = await _firestore.collection('users').doc(user.uid).get();
+      if (userDoc.exists) {
+        _usernameController.text = userDoc['username'] ?? user.displayName ?? '';
+        _profileImageUrl = userDoc['photoUrl'] ?? user.photoURL;
+      } else {
+        _usernameController.text = user.displayName ?? '';
+        _profileImageUrl = user.photoURL;
+      }
+    } catch (e) {
+      _usernameController.text = user.displayName ?? '';
+      _profileImageUrl = user.photoURL;
+    } finally {
+      setState(() => _isLoading = false);
+    }
   }
 
   @override
@@ -44,22 +66,41 @@ class _SettingsPageState extends State<SettingsPage> {
       if (pickedFile != null) {
         setState(() => _isLoading = true);
 
-        // Upload the image to Firebase Storage
         final user = _auth.currentUser;
-        if (user == null) return;
+        if (user == null) {
+          setState(() => _isLoading = false);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('You must be logged in to update your profile image')),
+          );
+          return;
+        }
+
+        // Refresh the user's token and log user details
+        await user.getIdToken(true);
+        debugPrint('User UID: ${user.uid}');
+        debugPrint('User email: ${user.email}');
+        debugPrint('User token: ${await user.getIdToken()}');
 
         final file = File(pickedFile.path);
         final fileName = 'profile_${user.uid}${path.extension(file.path)}';
         final ref = _storage.ref().child('profile_images/$fileName');
+        debugPrint('Uploading to Firebase Storage path: profile_images/$fileName');
 
         await ref.putFile(file);
         final downloadUrl = await ref.getDownloadURL();
 
-        // Update user profile
         await user.updatePhotoURL(downloadUrl);
-        await _firestore.collection('users').doc(user.uid).update({
+        await _firestore.collection('users').doc(user.uid).set({
           'photoUrl': downloadUrl,
-        });
+          'username': _usernameController.text.trim(),
+          'email': user.email,
+          'uid': user.uid,
+        }, SetOptions(merge: true));
+
+        // Reload the user to ensure photoURL is updated
+        await user.reload();
+        final updatedUser = _auth.currentUser;
+        debugPrint('Updated user photoURL: ${updatedUser?.photoURL}');
 
         setState(() {
           _profileImageUrl = downloadUrl;
@@ -72,8 +113,13 @@ class _SettingsPageState extends State<SettingsPage> {
       }
     } catch (e) {
       setState(() => _isLoading = false);
+      String errorMessage = 'Error updating image: $e';
+      if (e.toString().contains('unauthorized')) {
+        errorMessage = 'You do not have permission to upload images. Please ensure you are logged in with the correct account or contact support.';
+      }
+      debugPrint('Image upload error: $e');
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error updating image: $e')),
+        SnackBar(content: Text(errorMessage)),
       );
     }
   }
@@ -89,15 +135,24 @@ class _SettingsPageState extends State<SettingsPage> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Username cannot be empty')),
         );
+        setState(() => _isLoading = false);
         return;
       }
 
+      // Update the display name in Firebase Authentication
       await user.updateDisplayName(newUsername);
-      await _firestore.collection('users').doc(user.uid).update({
-        'username': newUsername,
-      });
 
+      // Update the username in Firestore
+      await _firestore.collection('users').doc(user.uid).set({
+        'username': newUsername,
+        'email': user.email,
+        'uid': user.uid,
+      }, SetOptions(merge: true));
+
+      // Refresh the user to ensure the updated display name is reflected
+      await user.reload();
       setState(() => _isLoading = false);
+
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Username updated')),
       );
@@ -109,33 +164,14 @@ class _SettingsPageState extends State<SettingsPage> {
     }
   }
 
-  Future<void> _clearAllHistory() async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Confirm Clear All History'),
-        content: const Text('Are you sure you want to delete all your recordings, transcriptions, and TTS conversions? This action cannot be undone.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Delete All', style: TextStyle(color: Colors.red)),
-          ),
-        ],
-      ),
-    );
-
-    if (confirmed != true) return;
-
+  Future<void> _deleteAllHistory() async {
     try {
-      setState(() => _isLoading = true);
       final user = _auth.currentUser;
       if (user == null) return;
 
-      // Delete all documents from each collection
+      setState(() => _isLoading = true);
+
+      // Delete all documents in the user's recordings, transcriptions, and tts collections
       final collections = ['recordings', 'transcriptions', 'tts'];
       for (final collection in collections) {
         final querySnapshot = await _firestore
@@ -143,30 +179,77 @@ class _SettingsPageState extends State<SettingsPage> {
             .doc(user.uid)
             .collection(collection)
             .get();
-
-        final batch = _firestore.batch();
         for (final doc in querySnapshot.docs) {
-          batch.delete(doc.reference);
+          // Safely access the document data
+          final data = doc.data();
+          // Check if audioFilePath exists and is not null
+          if (data.containsKey('audioFilePath') && data['audioFilePath'] != null) {
+            final file = File(data['audioFilePath']);
+            if (await file.exists()) {
+              await file.delete();
+            }
+          }
+          await doc.reference.delete();
         }
-        await batch.commit();
-      }
-
-      // Delete all local audio files
-      final directory = await getApplicationDocumentsDirectory();
-      final dir = Directory(directory.path);
-      if (await dir.exists()) {
-        await dir.delete(recursive: true);
       }
 
       setState(() => _isLoading = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('All history cleared successfully')),
+        const SnackBar(content: Text('All history deleted successfully')),
       );
     } catch (e) {
       setState(() => _isLoading = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error clearing history: $e')),
+        SnackBar(content: Text('Error deleting history: $e')),
       );
+    }
+  }
+
+  Future<void> _clearAllHistory() async {
+    // First confirmation dialog
+    final firstConfirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Confirm Clear All History'),
+        content: const Text(
+            'Are you sure you want to delete all your recordings, transcriptions, and TTS conversions? This action cannot be undone.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Delete', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+
+    if (firstConfirmed != true) return;
+
+    // Second confirmation dialog
+    final secondConfirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Final Confirmation'),
+        content: const Text(
+            'This is your final confirmation. Are you absolutely sure you want to clear all history? This action is irreversible.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Confirm Delete', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+
+    if (secondConfirmed == true) {
+      await _deleteAllHistory();
     }
   }
 
@@ -226,7 +309,7 @@ class _SettingsPageState extends State<SettingsPage> {
               controller: _usernameController,
               decoration: InputDecoration(
                 labelText: 'Username',
-                border: OutlineInputBorder(),
+                border: const OutlineInputBorder(),
                 suffixIcon: IconButton(
                   icon: const Icon(Icons.save),
                   onPressed: _updateUsername,
@@ -263,7 +346,8 @@ class _SettingsPageState extends State<SettingsPage> {
               leading: const Icon(Icons.delete_forever, color: Colors.red),
               title: const Text('Clear All History',
                   style: TextStyle(color: Colors.red)),
-              subtitle: const Text('Delete all your recordings, transcriptions and TTS conversions'),
+              subtitle: const Text(
+                  'Delete all your recordings, transcriptions and TTS conversions'),
               onTap: _clearAllHistory,
             ),
           ],

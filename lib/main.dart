@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'LoginOptions.dart';
 import 'theme_provider.dart';
 import 'WelcomeScreen.dart'; // Add this import
+import 'Splash_Screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -28,7 +29,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData.light(),
       darkTheme: ThemeData.dark(),
       themeMode: themeProvider.themeMode,
-      home: const WelcomeScreen(), // Change this to WelcomeScreen
+      home: const SplashScreen(), // Change this to WelcomeScreen
     );
   }
 }
