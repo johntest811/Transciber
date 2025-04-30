@@ -107,7 +107,6 @@ class _HomePageState extends State<HomePage> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final AudioPlayer _audioPlayer = AudioPlayer();
   bool _isPlaying = false;
-  bool _isDownloading = false;
 
   @override
   void initState() {
@@ -406,9 +405,12 @@ class _HomePageState extends State<HomePage> {
       ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
-        backgroundColor: Theme.of(context).bottomNavigationBarTheme.backgroundColor,
-        selectedItemColor: Theme.of(context).bottomNavigationBarTheme.selectedItemColor,
-        unselectedItemColor: Theme.of(context).bottomNavigationBarTheme.unselectedItemColor,
+        backgroundColor:
+        Theme.of(context).bottomNavigationBarTheme.backgroundColor,
+        selectedItemColor:
+        Theme.of(context).bottomNavigationBarTheme.selectedItemColor,
+        unselectedItemColor:
+        Theme.of(context).bottomNavigationBarTheme.unselectedItemColor,
         onTap: (index) {
           setState(() {
             _currentIndex = index;
@@ -454,7 +456,8 @@ class _HomePageState extends State<HomePage> {
           borderRadius: BorderRadius.circular(10),
           boxShadow: [
             BoxShadow(
-              color: Theme.of(context).cardTheme.shadowColor ?? Colors.black.withOpacity(0.1),
+              color: Theme.of(context).cardTheme.shadowColor ??
+                  Colors.black.withOpacity(0.1),
               blurRadius: Theme.of(context).cardTheme.elevation ?? 2,
               spreadRadius: 0.5,
               offset: const Offset(0, 2),
@@ -478,7 +481,11 @@ class _HomePageState extends State<HomePage> {
               Text(
                 date,
                 style: TextStyle(
-                  color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7),
+                  color: Theme.of(context)
+                      .textTheme
+                      .bodyMedium
+                      ?.color
+                      ?.withOpacity(0.7),
                 ),
               ),
             ],
@@ -488,7 +495,8 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildTranscriptionCard(String title, String words, String date, DocumentSnapshot doc) {
+  Widget _buildTranscriptionCard(
+      String title, String words, String date, DocumentSnapshot doc) {
     return GestureDetector(
       onTap: () => _viewTranscription(doc),
       child: Container(
@@ -498,7 +506,8 @@ class _HomePageState extends State<HomePage> {
           borderRadius: BorderRadius.circular(10),
           boxShadow: [
             BoxShadow(
-              color: Theme.of(context).cardTheme.shadowColor ?? Colors.black.withOpacity(0.1),
+              color: Theme.of(context).cardTheme.shadowColor ??
+                  Colors.black.withOpacity(0.1),
               blurRadius: Theme.of(context).cardTheme.elevation ?? 2,
               spreadRadius: 0.5,
               offset: const Offset(0, 2),
@@ -516,7 +525,11 @@ class _HomePageState extends State<HomePage> {
           subtitle: Text(
             '$words Words • $date',
             style: TextStyle(
-              color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7),
+              color: Theme.of(context)
+                  .textTheme
+                  .bodyMedium
+                  ?.color
+                  ?.withOpacity(0.7),
             ),
           ),
         ),
@@ -524,7 +537,8 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildTtsCard(String title, String words, String date, DocumentSnapshot doc) {
+  Widget _buildTtsCard(
+      String title, String words, String date, DocumentSnapshot doc) {
     return GestureDetector(
       onTap: () => _viewTTS(doc),
       child: Container(
@@ -534,7 +548,8 @@ class _HomePageState extends State<HomePage> {
           borderRadius: BorderRadius.circular(10),
           boxShadow: [
             BoxShadow(
-              color: Theme.of(context).cardTheme.shadowColor ?? Colors.black.withOpacity(0.1),
+              color: Theme.of(context).cardTheme.shadowColor ??
+                  Colors.black.withOpacity(0.1),
               blurRadius: Theme.of(context).cardTheme.elevation ?? 2,
               spreadRadius: 0.5,
               offset: const Offset(0, 2),
@@ -553,7 +568,11 @@ class _HomePageState extends State<HomePage> {
           subtitle: Text(
             '$words Words • $date',
             style: TextStyle(
-              color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7),
+              color: Theme.of(context)
+                  .textTheme
+                  .bodyMedium
+                  ?.color
+                  ?.withOpacity(0.7),
             ),
           ),
         ),
@@ -572,7 +591,10 @@ class _HomePageState extends State<HomePage> {
           children: [
             StreamBuilder<DocumentSnapshot>(
               stream: user != null
-                  ? FirebaseFirestore.instance.collection('users').doc(user.uid).snapshots()
+                  ? FirebaseFirestore.instance
+                  .collection('users')
+                  .doc(user.uid)
+                  .snapshots()
                   : Stream<DocumentSnapshot>.empty(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
@@ -635,7 +657,8 @@ class _HomePageState extends State<HomePage> {
                 return UserAccountsDrawerHeader(
                   accountName: Text(
                     username,
-                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    style: const TextStyle(
+                        fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                   accountEmail: Text(
                     user?.email ?? 'No email',
@@ -653,7 +676,8 @@ class _HomePageState extends State<HomePage> {
                         errorBuilder: (context, error, stackTrace) {
                           debugPrint('Error loading profile image: $error');
                           return Text(
-                            user?.email?.substring(0, 1).toUpperCase() ?? 'G',
+                            user?.email?.substring(0, 1).toUpperCase() ??
+                                'G',
                             style: const TextStyle(fontSize: 24),
                           );
                         },
@@ -848,7 +872,8 @@ class _HistoryListView extends StatelessWidget {
                         context: context,
                         builder: (context) => AlertDialog(
                           title: const Text('Confirm Delete'),
-                          content: const Text('Are you sure you want to delete this item?'),
+                          content:
+                          const Text('Are you sure you want to delete this item?'),
                           actions: [
                             TextButton(
                               onPressed: () => Navigator.pop(context, false),
@@ -856,7 +881,8 @@ class _HistoryListView extends StatelessWidget {
                             ),
                             TextButton(
                               onPressed: () => Navigator.pop(context, true),
-                              child: const Text('Delete', style: TextStyle(color: Colors.red)),
+                              child: const Text('Delete',
+                                  style: TextStyle(color: Colors.red)),
                             ),
                           ],
                         ),
@@ -895,17 +921,11 @@ class _HistoryListView extends StatelessWidget {
       await doc.reference.delete();
 
       if (doc['audioDownloadUrl'] != null) {
-        final storageRef = FirebaseStorage.instance.refFromURL(doc['audioDownloadUrl']);
+        final storageRef =
+        FirebaseStorage.instance.refFromURL(doc['audioDownloadUrl']);
         await storageRef.delete();
-        debugPrint('Deleted audio file from Firebase Storage: ${doc['audioDownloadUrl']}');
-      }
-
-      if (doc['audioFilePath'] != null) {
-        final file = File(doc['audioFilePath']);
-        if (await file.exists()) {
-          await file.delete();
-          debugPrint('Deleted local file: ${file.path}');
-        }
+        debugPrint(
+            'Deleted audio file from Firebase Storage: ${doc['audioDownloadUrl']}');
       }
     } catch (e) {
       debugPrint('Error deleting item: $e');
@@ -936,18 +956,16 @@ class _HistoryItemView extends StatefulWidget {
 }
 
 class _HistoryItemViewState extends State<_HistoryItemView> {
-  bool _fileExists = false;
-  bool _isDownloading = false;
   final AudioPlayer _audioPlayer = AudioPlayer();
   bool _isPlaying = false;
   Duration _position = Duration.zero;
   Duration _duration = Duration.zero;
+  String? _currentAudioPath;
 
   @override
   void initState() {
     super.initState();
-    _checkPermissions();
-    _checkFileExistence();
+    _currentAudioPath = widget.audioPath;
     _setupAudioPlayer();
   }
 
@@ -979,6 +997,7 @@ class _HistoryItemViewState extends State<_HistoryItemView> {
       }
     });
 
+    // Prioritize loading from audioDownloadUrl
     if (widget.audioDownloadUrl != null) {
       try {
         await _audioPlayer.setUrl(widget.audioDownloadUrl!);
@@ -986,149 +1005,41 @@ class _HistoryItemViewState extends State<_HistoryItemView> {
       } catch (e) {
         debugPrint('Error loading audio from URL: $e');
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to load audio: $e')),
+          SnackBar(content: Text('Failed to load audio from cloud: $e')),
         );
-      }
-    }
-  }
-
-  Future<void> _checkPermissions() async {
-    if (Platform.isAndroid) {
-      final androidInfo = await DeviceInfoPlugin().androidInfo;
-      final sdkInt = androidInfo.version.sdkInt;
-
-      PermissionStatus status;
-      if (sdkInt >= 30) {
-        status = await Permission.manageExternalStorage.status;
-        if (!status.isGranted) {
-          status = await Permission.manageExternalStorage.request();
-          if (!status.isGranted) {
-            _handlePermissionDenied();
-            return;
-          }
-        }
-      } else {
-        status = await Permission.storage.status;
-        if (!status.isGranted) {
-          status = await Permission.storage.request();
-          if (!status.isGranted) {
-            _handlePermissionDenied();
-            return;
+        // Fallback to local file if it exists
+        if (_currentAudioPath != null) {
+          try {
+            final file = File(_currentAudioPath!);
+            if (await file.exists()) {
+              await _audioPlayer.setFilePath(_currentAudioPath!);
+              debugPrint('Loaded audio from local path: $_currentAudioPath');
+            } else {
+              debugPrint('Local file does not exist: $_currentAudioPath');
+            }
+          } catch (e) {
+            debugPrint('Error loading audio from local path: $e');
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Failed to load local audio: $e')),
+            );
           }
         }
       }
-    }
-  }
-
-  void _handlePermissionDenied() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Text('Storage permission is required to download audio files'),
-        action: SnackBarAction(
-          label: 'Settings',
-          onPressed: () {
-            openAppSettings();
-          },
-        ),
-      ),
-    );
-  }
-
-  Future<void> _checkFileExistence() async {
-    if (widget.audioPath == null) {
-      setState(() => _fileExists = false);
-      return;
-    }
-
-    try {
-      final file = File(widget.audioPath!);
-      bool exists = await file.exists();
-      debugPrint('Checking file existence: ${file.path}, exists: $exists');
-      setState(() => _fileExists = exists);
-    } catch (e) {
-      debugPrint('Error checking file: $e');
-      setState(() => _fileExists = false);
-    }
-  }
-
-  Future<void> _downloadFile() async {
-    if (widget.audioDownloadUrl == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No audio file associated with this item')),
-      );
-      return;
-    }
-
-    if (Platform.isAndroid) {
-      final androidInfo = await DeviceInfoPlugin().androidInfo;
-      final sdkInt = androidInfo.version.sdkInt;
-
-      PermissionStatus status;
-      if (sdkInt >= 30) {
-        status = await Permission.manageExternalStorage.status;
-      } else {
-        status = await Permission.storage.status;
-      }
-
-      if (!status.isGranted) {
-        if (sdkInt >= 30) {
-          status = await Permission.manageExternalStorage.request();
+    } else if (_currentAudioPath != null) {
+      try {
+        final file = File(_currentAudioPath!);
+        if (await file.exists()) {
+          await _audioPlayer.setFilePath(_currentAudioPath!);
+          debugPrint('Loaded audio from local path: $_currentAudioPath');
         } else {
-          status = await Permission.storage.request();
+          debugPrint('Local file does not exist: $_currentAudioPath');
         }
-
-        if (!status.isGranted) {
-          _handlePermissionDenied();
-          return;
-        }
-      }
-    }
-
-    setState(() => _isDownloading = true);
-
-    try {
-      final timestamp = DateTime.now().millisecondsSinceEpoch;
-      final baseFileName = 'TTS_$timestamp.mp3';
-      String newFilePath;
-
-      if (Platform.isAndroid) {
-        final musicDir = Directory('/storage/emulated/0/Music');
-        if (!await musicDir.exists()) {
-          await musicDir.create(recursive: true);
-        }
-        newFilePath = path.join(musicDir.path, baseFileName);
-      } else {
-        final directory = await getApplicationDocumentsDirectory();
-        newFilePath = path.join(directory.path, baseFileName);
-      }
-
-      // Download the file from Firebase Storage
-      final ref = FirebaseStorage.instance.refFromURL(widget.audioDownloadUrl!);
-      final bytes = await ref.getData();
-
-      if (bytes == null) {
-        throw Exception('Failed to download audio data');
-      }
-
-      final file = File(newFilePath);
-      await file.writeAsBytes(bytes);
-
-      if (await file.exists()) {
+      } catch (e) {
+        debugPrint('Error loading audio from local path: $e');
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Audio downloaded to Music directory')),
-        );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to download audio file')),
+          SnackBar(content: Text('Failed to load local audio: $e')),
         );
       }
-    } catch (e) {
-      debugPrint('Download error: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Download error: ${e.toString()}')),
-      );
-    } finally {
-      setState(() => _isDownloading = false);
     }
   }
 
@@ -1169,17 +1080,11 @@ class _HistoryItemViewState extends State<_HistoryItemView> {
           .delete();
 
       if (widget.audioDownloadUrl != null) {
-        final storageRef = FirebaseStorage.instance.refFromURL(widget.audioDownloadUrl!);
+        final storageRef =
+        FirebaseStorage.instance.refFromURL(widget.audioDownloadUrl!);
         await storageRef.delete();
-        debugPrint('Deleted audio file from Firebase Storage: ${widget.audioDownloadUrl}');
-      }
-
-      if (widget.audioPath != null) {
-        final file = File(widget.audioPath!);
-        if (await file.exists()) {
-          await file.delete();
-          debugPrint('Deleted local file: ${file.path}');
-        }
+        debugPrint(
+            'Deleted audio file from Firebase Storage: ${widget.audioDownloadUrl}');
       }
 
       ScaffoldMessenger.of(context).showSnackBar(
@@ -1237,7 +1142,8 @@ class _HistoryItemViewState extends State<_HistoryItemView> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            if (widget.audioDownloadUrl != null) ...[
+            // Show Audio Playback section if either audioDownloadUrl or audioPath is available
+            if (widget.audioDownloadUrl != null || widget.audioPath != null) ...[
               Card(
                 child: Padding(
                   padding: const EdgeInsets.all(16.0),
@@ -1257,14 +1163,19 @@ class _HistoryItemViewState extends State<_HistoryItemView> {
                               _isPlaying ? Icons.pause : Icons.play_arrow,
                               size: 32,
                             ),
-                            onPressed: widget.audioDownloadUrl != null ? _playPauseAudio : null,
+                            onPressed: (widget.audioDownloadUrl != null ||
+                                widget.audioPath != null)
+                                ? _playPauseAudio
+                                : null,
                           ),
                         ],
                       ),
                       Slider(
                         value: _position.inSeconds.toDouble(),
                         min: 0.0,
-                        max: _duration.inSeconds.toDouble() > 0 ? _duration.inSeconds.toDouble() : 1.0,
+                        max: _duration.inSeconds.toDouble() > 0
+                            ? _duration.inSeconds.toDouble()
+                            : 1.0,
                         onChanged: (value) {
                           _seekAudio(value);
                         },
@@ -1274,81 +1185,6 @@ class _HistoryItemViewState extends State<_HistoryItemView> {
                         children: [
                           Text(_formatDuration(_position)),
                           Text(_formatDuration(_duration)),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
-            ],
-            if (widget.audioPath != null) ...[
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Audio File',
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                      const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  widget.audioPath!,
-                                  style: TextStyle(
-                                    color: _fileExists ? Colors.green : Colors.red,
-                                  ),
-                                ),
-                                Text(
-                                  _fileExists ? 'File exists' : 'File not found',
-                                  style: TextStyle(
-                                    color: _fileExists ? Colors.green : Colors.red,
-                                  ),
-                                ),
-                                if (_fileExists) ...[
-                                  FutureBuilder<File>(
-                                    future: () async {
-                                      final file = File(widget.audioPath!);
-                                      debugPrint('Checking file in UI: ${file.path}');
-                                      return file;
-                                    }(),
-                                    builder: (context, snapshot) {
-                                      if (snapshot.hasData) {
-                                        return FutureBuilder<int>(
-                                          future: snapshot.data!.length(),
-                                          builder: (context, sizeSnapshot) {
-                                            if (sizeSnapshot.hasData) {
-                                              return Text(
-                                                'Size: ${(sizeSnapshot.data! / 1024).toStringAsFixed(2)} KB',
-                                                style: TextStyle(
-                                                  color: Theme.of(context).textTheme.bodyMedium?.color,
-                                                ),
-                                              );
-                                            }
-                                            return const Text('Calculating size...');
-                                          },
-                                        );
-                                      }
-                                      return const Text('Checking file...');
-                                    },
-                                  ),
-                                ],
-                              ],
-                            ),
-                          ),
-                          ElevatedButton(
-                            onPressed: widget.audioDownloadUrl != null && !_isDownloading ? _downloadFile : null,
-                            child: _isDownloading
-                                ? const CircularProgressIndicator(color: Colors.white)
-                                : const Text('Download'),
-                          ),
                         ],
                       ),
                     ],
