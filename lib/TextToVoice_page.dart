@@ -10,6 +10,7 @@ import 'Home.dart';
 import 'theme_provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart'; // Added for Firebase Storage
 import 'package:intl/intl.dart';
 import 'package:path/path.dart' as path;
 
@@ -49,10 +50,12 @@ class _TTSHomePageState extends State<TTSHomePage> {
   List<Map<String, String>> languages = [];
   String? savePath;
   String? savedFileName;
+  String? audioDownloadUrl; // Added to store Firebase Storage URL
 
   // Firebase instances
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseStorage _storage = FirebaseStorage.instance; // Added for Firebase Storage
 
   @override
   void initState() {
@@ -156,6 +159,7 @@ class _TTSHomePageState extends State<TTSHomePage> {
 
     setState(() {
       isSaving = true;
+      audioDownloadUrl = null; // Reset audioDownloadUrl to ensure it’s fresh
     });
 
     try {
@@ -188,6 +192,23 @@ class _TTSHomePageState extends State<TTSHomePage> {
         debugPrint('File verification: $exists');
         if (exists) {
           debugPrint('File size: ${(await file.length()).toString()} bytes');
+
+          // Upload to Firebase Storage
+          final user = _auth.currentUser;
+          if (user != null) {
+            final storageRef = _storage.ref().child('users/${user.uid}/tts/$baseFileName');
+            final uploadTask = storageRef.putFile(file);
+            final snapshot = await uploadTask;
+            final downloadUrl = await snapshot.ref.getDownloadURL();
+            debugPrint('Uploaded to Firebase Storage: $downloadUrl');
+
+            setState(() {
+              audioDownloadUrl = downloadUrl; // Store the download URL
+            });
+          } else {
+            debugPrint('User not logged in, skipping upload to Firebase Storage');
+            _showSnackBar('Audio saved locally, but not uploaded to cloud. Please log in to save to history.');
+          }
         }
 
         setState(() {
@@ -247,7 +268,7 @@ class _TTSHomePageState extends State<TTSHomePage> {
           'words': textController.text.split(RegExp(r'\s+')).where((word) => word.isNotEmpty).length,
           'date': DateFormat('MMM d').format(DateTime.now()),
           'timestamp': FieldValue.serverTimestamp(),
-          'audioFilePath': savePath, // Store the full path instead of just the filename
+          'audioDownloadUrl': audioDownloadUrl, // Store the Firebase Storage URL
           'language': selectedLanguage,
         });
         _showSnackBar('Saved to history');

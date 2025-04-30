@@ -958,14 +958,13 @@ class _HistoryItemView extends StatefulWidget {
 class _HistoryItemViewState extends State<_HistoryItemView> {
   final AudioPlayer _audioPlayer = AudioPlayer();
   bool _isPlaying = false;
+  bool _canPlayAudio = false;
   Duration _position = Duration.zero;
   Duration _duration = Duration.zero;
-  String? _currentAudioPath;
 
   @override
   void initState() {
     super.initState();
-    _currentAudioPath = widget.audioPath;
     _setupAudioPlayer();
   }
 
@@ -997,49 +996,36 @@ class _HistoryItemViewState extends State<_HistoryItemView> {
       }
     });
 
-    // Prioritize loading from audioDownloadUrl
+    bool audioLoaded = false;
+
+    // Load audio from audioDownloadUrl
     if (widget.audioDownloadUrl != null) {
       try {
         await _audioPlayer.setUrl(widget.audioDownloadUrl!);
         debugPrint('Loaded audio from URL: ${widget.audioDownloadUrl}');
+        audioLoaded = true;
       } catch (e) {
         debugPrint('Error loading audio from URL: $e');
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Failed to load audio from cloud: $e')),
         );
-        // Fallback to local file if it exists
-        if (_currentAudioPath != null) {
-          try {
-            final file = File(_currentAudioPath!);
-            if (await file.exists()) {
-              await _audioPlayer.setFilePath(_currentAudioPath!);
-              debugPrint('Loaded audio from local path: $_currentAudioPath');
-            } else {
-              debugPrint('Local file does not exist: $_currentAudioPath');
-            }
-          } catch (e) {
-            debugPrint('Error loading audio from local path: $e');
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Failed to load local audio: $e')),
-            );
-          }
-        }
       }
-    } else if (_currentAudioPath != null) {
-      try {
-        final file = File(_currentAudioPath!);
-        if (await file.exists()) {
-          await _audioPlayer.setFilePath(_currentAudioPath!);
-          debugPrint('Loaded audio from local path: $_currentAudioPath');
-        } else {
-          debugPrint('Local file does not exist: $_currentAudioPath');
-        }
-      } catch (e) {
-        debugPrint('Error loading audio from local path: $e');
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to load local audio: $e')),
-        );
-      }
+    } else {
+      debugPrint('No audioDownloadUrl provided');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Audio file is missing or was not uploaded to the cloud')),
+      );
+    }
+
+    setState(() {
+      _canPlayAudio = audioLoaded;
+    });
+
+    if (!audioLoaded && widget.audioDownloadUrl != null) {
+      // Only show this if we tried to load a URL and failed
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No playable audio source available')),
+      );
     }
   }
 
@@ -1142,8 +1128,8 @@ class _HistoryItemViewState extends State<_HistoryItemView> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Show Audio Playback section if either audioDownloadUrl or audioPath is available
-            if (widget.audioDownloadUrl != null || widget.audioPath != null) ...[
+            // Show Audio Playback section if audioDownloadUrl is available
+            if (widget.audioDownloadUrl != null) ...[
               Card(
                 child: Padding(
                   padding: const EdgeInsets.all(16.0),
@@ -1163,10 +1149,7 @@ class _HistoryItemViewState extends State<_HistoryItemView> {
                               _isPlaying ? Icons.pause : Icons.play_arrow,
                               size: 32,
                             ),
-                            onPressed: (widget.audioDownloadUrl != null ||
-                                widget.audioPath != null)
-                                ? _playPauseAudio
-                                : null,
+                            onPressed: _canPlayAudio ? _playPauseAudio : null,
                           ),
                         ],
                       ),
@@ -1176,9 +1159,11 @@ class _HistoryItemViewState extends State<_HistoryItemView> {
                         max: _duration.inSeconds.toDouble() > 0
                             ? _duration.inSeconds.toDouble()
                             : 1.0,
-                        onChanged: (value) {
+                        onChanged: _canPlayAudio
+                            ? (value) {
                           _seekAudio(value);
-                        },
+                        }
+                            : null,
                       ),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
