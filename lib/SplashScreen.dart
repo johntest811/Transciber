@@ -37,8 +37,6 @@ class _SplashScreenState extends State<SplashScreen> {
               fit: BoxFit.contain,
             ),
           ),
-
-
           Positioned(
             bottom: 0,
             left: 0,

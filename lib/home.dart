@@ -18,6 +18,7 @@ import 'settings.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:flutter/services.dart'; // Added for Clipboard
 
 void main() {
   runApp(
@@ -1097,6 +1098,13 @@ class _HistoryItemViewState extends State<_HistoryItemView> {
     await _audioPlayer.seek(position);
   }
 
+  Future<void> _copyText() async {
+    await Clipboard.setData(ClipboardData(text: widget.content));
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Text copied to clipboard')),
+    );
+  }
+
   String _formatDuration(Duration duration) {
     String twoDigits(int n) => n.toString().padLeft(2, '0');
     final minutes = twoDigits(duration.inMinutes.remainder(60));
@@ -1192,6 +1200,15 @@ class _HistoryItemViewState extends State<_HistoryItemView> {
                     SelectableText(
                       widget.content,
                       style: Theme.of(context).textTheme.bodyLarge,
+                    ),
+                    const SizedBox(height: 16),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: TextButton.icon(
+                        icon: const Icon(Icons.copy),
+                        label: const Text('Copy Text'),
+                        onPressed: _copyText,
+                      ),
                     ),
                   ],
                 ),

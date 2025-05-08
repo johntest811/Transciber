@@ -30,6 +30,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  flutter_launcher_icons: ^0.14.3
   firebase_core: ^3.8.0
   firebase_auth: ^5.5.1
   cloud_firestore: ^5.6.5
@@ -90,6 +91,12 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
 
+flutter_launcher_icons:
+  android: "launcher_icon"
+  ios: true
+  image_path: "assets/icon/logo.png"
+  minify_icon: true
+
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is
   # activated in the `analysis_options.yaml` file located at the root of your
@@ -113,6 +120,13 @@ flutter:
     - images/RobotAnimation.gif
     - assets/Animation.json
     - assets/Robot.json
+    - assets/icon/logo.png
+
+flutter_native_splash:
+  color: "#000000" # Black background to match SplashScreen.dart
+  image: ""
+  android: true
+  ios: true
 
   #    - assets/models/
   #    - assets/models/whisper.bin

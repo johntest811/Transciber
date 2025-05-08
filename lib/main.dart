@@ -1,10 +1,8 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'LoginOptions.dart';
 import 'theme_provider.dart';
-import 'WelcomeScreen.dart'; // Add this import
-import 'Splash_Screen.dart';
+import 'SplashScreen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -29,7 +27,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData.light(),
       darkTheme: ThemeData.dark(),
       themeMode: themeProvider.themeMode,
-      home: const SplashScreen(), // Change this to WelcomeScreen
+      home: const SplashScreen(),
     );
   }
 }
