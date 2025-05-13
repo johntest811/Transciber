@@ -13,11 +13,12 @@ import 'package:audio_session/audio_session.dart';
 import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
-import 'dart:developer'; // For debugPrint
+import 'dart:developer';
 import 'settings.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:flutter/services.dart';
 
 void main() {
   runApp(
@@ -34,8 +35,13 @@ class Home extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Trancify',
+      debugShowCheckedModeBanner: false,
+      title: 'Transcrify',
       theme: ThemeData.light().copyWith(
+        colorScheme: ColorScheme.light(
+          primary: Colors.cyanAccent[700]!,
+          secondary: Colors.cyanAccent[400]!,
+        ),
         appBarTheme: AppBarTheme(
           backgroundColor: Colors.white,
           iconTheme: const IconThemeData(color: Colors.black),
@@ -44,17 +50,26 @@ class Home extends StatelessWidget {
             fontSize: 20,
             fontWeight: FontWeight.bold,
           ),
+          elevation: 0,
         ),
         cardColor: Colors.white,
         cardTheme: CardTheme(
           elevation: 2,
           shadowColor: Colors.black.withOpacity(0.1),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(15),
           ),
+        ),
+        floatingActionButtonTheme: FloatingActionButtonThemeData(
+          backgroundColor: Colors.cyanAccent[700],
+          foregroundColor: Colors.white,
         ),
       ),
       darkTheme: ThemeData.dark().copyWith(
+        colorScheme: ColorScheme.dark(
+          primary: Colors.cyanAccent[400]!,
+          secondary: Colors.cyanAccent[200]!,
+        ),
         appBarTheme: AppBarTheme(
           backgroundColor: Colors.grey[900],
           iconTheme: const IconThemeData(color: Colors.white),
@@ -63,14 +78,19 @@ class Home extends StatelessWidget {
             fontSize: 20,
             fontWeight: FontWeight.bold,
           ),
+          elevation: 0,
         ),
         cardColor: Colors.grey[800],
         cardTheme: CardTheme(
           elevation: 4,
           shadowColor: Colors.black.withOpacity(0.3),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(15),
           ),
+        ),
+        floatingActionButtonTheme: FloatingActionButtonThemeData(
+          backgroundColor: Colors.cyanAccent[400],
+          foregroundColor: Colors.black,
         ),
       ),
       themeMode: Provider.of<ThemeProvider>(context).themeMode,
@@ -107,7 +127,6 @@ class _HomePageState extends State<HomePage> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final AudioPlayer _audioPlayer = AudioPlayer();
   bool _isPlaying = false;
-  bool _isDownloading = false;
 
   @override
   void initState() {
@@ -187,6 +206,14 @@ class _HomePageState extends State<HomePage> {
               const Text('Please log in to view your history'),
               const SizedBox(height: 20),
               ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.cyanAccent[700],
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 12),
+                ),
                 onPressed: () {
                   Navigator.pushReplacement(
                     context,
@@ -205,17 +232,17 @@ class _HomePageState extends State<HomePage> {
       key: _scaffoldKey,
       appBar: AppBar(
         backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
-        elevation: Theme.of(context).brightness == Brightness.dark ? 0 : 2,
-        shadowColor: Theme.of(context).brightness == Brightness.dark
-            ? Colors.transparent
-            : Colors.grey.withOpacity(0.3),
+        elevation: 0,
         leading: IconButton(
           icon: Icon(Icons.menu, color: Theme.of(context).iconTheme.color),
           onPressed: () => _scaffoldKey.currentState?.openDrawer(),
         ),
         title: Text(
-          'Welcome to Trancify',
-          style: TextStyle(color: Theme.of(context).textTheme.titleLarge?.color),
+          'Welcome to Transcrify',
+          style: TextStyle(
+            color: Theme.of(context).textTheme.titleLarge?.color,
+            fontWeight: FontWeight.bold,
+          ),
         ),
         actions: [
           IconButton(
@@ -231,33 +258,62 @@ class _HomePageState extends State<HomePage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    'Recordings',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              // Header with greeting
+              Padding(
+                padding: const EdgeInsets.only(bottom: 16.0),
+                child: Text(
+                  'Hello, ${user.displayName ?? 'User'}!',
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).textTheme.titleLarge?.color,
                   ),
-                  TextButton(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => _HistoryListView(
-                            collectionName: 'recordings',
-                            title: 'All Recordings',
-                            onItemTap: _viewRecording,
-                          ),
-                        ),
-                      );
-                    },
-                    child: const Text('See all'),
+                ),
+              ),
+
+              // Quick actions row
+              const SizedBox(height: 16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  _buildQuickAction(
+                    icon: Icons.mic,
+                    label: 'Record',
+                    onTap: () => Navigator.pushNamed(context, '/voice-to-text'),
+                  ),
+                  _buildQuickAction(
+                    icon: Icons.text_snippet,
+                    label: 'Text to Speech',
+                    onTap: () => Navigator.pushNamed(context, '/text-to-voice'),
+                  ),
+                  _buildQuickAction(
+                    icon: Icons.insert_drive_file,
+                    label: 'File to Text',
+                    onTap: () => Navigator.pushNamed(context, '/file-to-text'),
                   ),
                 ],
               ),
+              const SizedBox(height: 32),
+
+              // Recent Recordings Section
+              _buildSectionHeader(
+                title: 'Recent Recordings',
+                onSeeAll: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => _HistoryListView(
+                        collectionName: 'recordings',
+                        title: 'All Recordings',
+                        onItemTap: _viewRecording,
+                      ),
+                    ),
+                  );
+                },
+              ),
               const SizedBox(height: 10),
               SizedBox(
-                height: 120,
+                height: 165,
                 child: StreamBuilder<QuerySnapshot>(
                   stream: _firestore
                       .collection('users')
@@ -271,7 +327,12 @@ class _HomePageState extends State<HomePage> {
                       return const Center(child: CircularProgressIndicator());
                     }
                     if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                      return const Center(child: Text('No recordings yet'));
+                      return _buildEmptyState(
+                        icon: Icons.mic_none,
+                        message: 'No recordings yet',
+                        actionText: 'Start Recording',
+                        onAction: () => Navigator.pushNamed(context, '/voice-to-text'),
+                      );
                     }
 
                     final recordings = snapshot.data!.docs;
@@ -290,30 +351,23 @@ class _HomePageState extends State<HomePage> {
                   },
                 ),
               ),
-              const SizedBox(height: 30),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    'Transcriptions',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                  TextButton(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => _HistoryListView(
-                            collectionName: 'transcriptions',
-                            title: 'All Transcriptions',
-                            onItemTap: _viewTranscription,
-                          ),
-                        ),
-                      );
-                    },
-                    child: const Text('See all'),
-                  ),
-                ],
+              const SizedBox(height: 32),
+
+              // Recent Transcriptions Section
+              _buildSectionHeader(
+                title: 'Recent Transcriptions',
+                onSeeAll: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => _HistoryListView(
+                        collectionName: 'transcriptions',
+                        title: 'All Transcriptions',
+                        onItemTap: _viewTranscription,
+                      ),
+                    ),
+                  );
+                },
               ),
               const SizedBox(height: 10),
               StreamBuilder<QuerySnapshot>(
@@ -329,7 +383,12 @@ class _HomePageState extends State<HomePage> {
                     return const Center(child: CircularProgressIndicator());
                   }
                   if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                    return const Center(child: Text('No transcriptions yet'));
+                    return _buildEmptyState(
+                      icon: Icons.text_snippet,
+                      message: 'No transcriptions yet',
+                      actionText: 'Create Transcription',
+                      onAction: () => Navigator.pushNamed(context, '/file-to-text'),
+                    );
                   }
 
                   final transcriptions = snapshot.data!.docs;
@@ -345,30 +404,23 @@ class _HomePageState extends State<HomePage> {
                   );
                 },
               ),
-              const SizedBox(height: 30),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    'Text-to-Speech',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                  TextButton(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => _HistoryListView(
-                            collectionName: 'tts',
-                            title: 'All TTS Conversions',
-                            onItemTap: _viewTTS,
-                          ),
-                        ),
-                      );
-                    },
-                    child: const Text('See all'),
-                  ),
-                ],
+              const SizedBox(height: 32),
+
+              // Recent TTS Section
+              _buildSectionHeader(
+                title: 'Recent Text-to-Speech',
+                onSeeAll: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => _HistoryListView(
+                        collectionName: 'tts',
+                        title: 'All TTS Conversions',
+                        onItemTap: _viewTTS,
+                      ),
+                    ),
+                  );
+                },
               ),
               const SizedBox(height: 10),
               StreamBuilder<QuerySnapshot>(
@@ -384,7 +436,12 @@ class _HomePageState extends State<HomePage> {
                     return const Center(child: CircularProgressIndicator());
                   }
                   if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                    return const Center(child: Text('No TTS conversions yet'));
+                    return _buildEmptyState(
+                      icon: Icons.volume_up,
+                      message: 'No TTS conversions yet',
+                      actionText: 'Try TTS',
+                      onAction: () => Navigator.pushNamed(context, '/text-to-voice'),
+                    );
                   }
 
                   final ttsItems = snapshot.data!.docs;
@@ -404,39 +461,100 @@ class _HomePageState extends State<HomePage> {
           ),
         ),
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _currentIndex,
-        backgroundColor: Theme.of(context).bottomNavigationBarTheme.backgroundColor,
-        selectedItemColor: Theme.of(context).bottomNavigationBarTheme.selectedItemColor,
-        unselectedItemColor: Theme.of(context).bottomNavigationBarTheme.unselectedItemColor,
-        onTap: (index) {
-          setState(() {
-            _currentIndex = index;
-          });
-          switch (index) {
-            case 0:
-              Navigator.pushNamed(context, '/text-to-voice');
-              break;
-            case 1:
-              Navigator.pushNamed(context, '/voice-to-text');
-              break;
-            case 2:
-              Navigator.pushNamed(context, '/file-to-text');
-              break;
-          }
-        },
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.text_snippet),
-            label: 'Text to Voice',
+      bottomNavigationBar: _buildBottomNavigationBar(),
+    );
+  }
+
+  Widget _buildQuickAction({required IconData icon, required String label, required VoidCallback onTap}) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Column(
+        children: [
+          Container(
+            width: 60,
+            height: 60,
+            decoration: BoxDecoration(
+              color: Colors.cyanAccent.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(15),
+            ),
+            child: Icon(
+              icon,
+              size: 30,
+              color: Colors.cyanAccent[700],
+            ),
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.mic),
-            label: 'Voice to Text',
+          const SizedBox(height: 8),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              color: Theme.of(context).textTheme.bodyMedium?.color,
+            ),
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.insert_drive_file),
-            label: 'File to Text',
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSectionHeader({required String title, required VoidCallback onSeeAll}) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          title,
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: Theme.of(context).textTheme.titleLarge?.color,
+          ),
+        ),
+        TextButton(
+          onPressed: onSeeAll,
+          child: Text(
+            'See all',
+            style: TextStyle(
+              color: Colors.cyanAccent[700],
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildEmptyState({required IconData icon, required String message, required String actionText, required VoidCallback onAction}) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardColor,
+        borderRadius: BorderRadius.circular(15),
+      ),
+      child: Column(
+        children: [
+          Icon(
+            icon,
+            size: 40,
+            color: Colors.grey.withOpacity(0.5),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            message,
+            style: TextStyle(
+              color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.6),
+            ),
+          ),
+          const SizedBox(height: 15),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.cyanAccent[700],
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+            ),
+            onPressed: onAction,
+            child: Text(actionText),
           ),
         ],
       ),
@@ -447,14 +565,15 @@ class _HomePageState extends State<HomePage> {
     return GestureDetector(
       onTap: () => _viewRecording(doc),
       child: Container(
-        width: 150,
+        width: 160,
         margin: const EdgeInsets.only(right: 15),
         decoration: BoxDecoration(
           color: Theme.of(context).cardColor,
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(15),
           boxShadow: [
             BoxShadow(
-              color: Theme.of(context).cardTheme.shadowColor ?? Colors.black.withOpacity(0.1),
+              color: Theme.of(context).cardTheme.shadowColor ??
+                  Colors.black.withOpacity(0.1),
               blurRadius: Theme.of(context).cardTheme.elevation ?? 2,
               spreadRadius: 0.5,
               offset: const Offset(0, 2),
@@ -462,10 +581,24 @@ class _HomePageState extends State<HomePage> {
           ],
         ),
         child: Padding(
-          padding: const EdgeInsets.all(12.0),
+          padding: const EdgeInsets.all(16.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: Colors.cyanAccent.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(
+                  Icons.mic,
+                  size: 20,
+                  color: Colors.cyanAccent[700],
+                ),
+              ),
+              const SizedBox(height: 12),
               Text(
                 title,
                 style: TextStyle(
@@ -473,12 +606,19 @@ class _HomePageState extends State<HomePage> {
                   fontSize: 16,
                   color: Theme.of(context).textTheme.bodyLarge?.color,
                 ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
               ),
               const Spacer(),
               Text(
                 date,
                 style: TextStyle(
-                  color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7),
+                  fontSize: 12,
+                  color: Theme.of(context)
+                      .textTheme
+                      .bodyMedium
+                      ?.color
+                      ?.withOpacity(0.7),
                 ),
               ),
             ],
@@ -488,74 +628,238 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildTranscriptionCard(String title, String words, String date, DocumentSnapshot doc) {
+  Widget _buildTranscriptionCard(
+      String title, String words, String date, DocumentSnapshot doc) {
     return GestureDetector(
       onTap: () => _viewTranscription(doc),
       child: Container(
         margin: const EdgeInsets.only(bottom: 15),
         decoration: BoxDecoration(
           color: Theme.of(context).cardColor,
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(15),
           boxShadow: [
             BoxShadow(
-              color: Theme.of(context).cardTheme.shadowColor ?? Colors.black.withOpacity(0.1),
+              color: Theme.of(context).cardTheme.shadowColor ??
+                  Colors.black.withOpacity(0.1),
               blurRadius: Theme.of(context).cardTheme.elevation ?? 2,
               spreadRadius: 0.5,
               offset: const Offset(0, 2),
             ),
           ],
         ),
-        child: ListTile(
-          title: Text(
-            title,
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              color: Theme.of(context).textTheme.bodyLarge?.color,
-            ),
-          ),
-          subtitle: Text(
-            '$words Words • $date',
-            style: TextStyle(
-              color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7),
-            ),
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Row(
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: Colors.cyanAccent.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  Icons.text_snippet,
+                  size: 24,
+                  color: Colors.cyanAccent[700],
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Theme.of(context).textTheme.bodyLarge?.color,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '$words Words • $date',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Theme.of(context)
+                            .textTheme
+                            .bodyMedium
+                            ?.color
+                            ?.withOpacity(0.7),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(
+                Icons.chevron_right,
+                color: Theme.of(context).iconTheme.color?.withOpacity(0.5),
+              ),
+            ],
           ),
         ),
       ),
     );
   }
 
-  Widget _buildTtsCard(String title, String words, String date, DocumentSnapshot doc) {
+  Widget _buildTtsCard(
+      String title, String words, String date, DocumentSnapshot doc) {
     return GestureDetector(
       onTap: () => _viewTTS(doc),
       child: Container(
         margin: const EdgeInsets.only(bottom: 15),
         decoration: BoxDecoration(
           color: Theme.of(context).cardColor,
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(15),
           boxShadow: [
             BoxShadow(
-              color: Theme.of(context).cardTheme.shadowColor ?? Colors.black.withOpacity(0.1),
+              color: Theme.of(context).cardTheme.shadowColor ??
+                  Colors.black.withOpacity(0.1),
               blurRadius: Theme.of(context).cardTheme.elevation ?? 2,
               spreadRadius: 0.5,
               offset: const Offset(0, 2),
             ),
           ],
         ),
-        child: ListTile(
-          leading: const Icon(Icons.volume_up),
-          title: Text(
-            title,
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              color: Theme.of(context).textTheme.bodyLarge?.color,
-            ),
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Row(
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: Colors.cyanAccent.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  Icons.volume_up,
+                  size: 24,
+                  color: Colors.cyanAccent[700],
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Theme.of(context).textTheme.bodyLarge?.color,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '$words Words • $date',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Theme.of(context)
+                            .textTheme
+                            .bodyMedium
+                            ?.color
+                            ?.withOpacity(0.7),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(
+                Icons.chevron_right,
+                color: Theme.of(context).iconTheme.color?.withOpacity(0.5),
+              ),
+            ],
           ),
-          subtitle: Text(
-            '$words Words • $date',
-            style: TextStyle(
-              color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7),
-            ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBottomNavigationBar() {
+    return Container(
+      decoration: BoxDecoration(
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 10,
+            spreadRadius: 0,
+            offset: const Offset(0, -2),
           ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(15)),
+        child: BottomNavigationBar(
+          currentIndex: _currentIndex,
+          backgroundColor: Theme.of(context).bottomAppBarTheme.color,
+          selectedItemColor: Colors.cyanAccent[700],
+          unselectedItemColor: Theme.of(context).bottomNavigationBarTheme.unselectedItemColor,
+          showSelectedLabels: true,
+          showUnselectedLabels: true,
+          type: BottomNavigationBarType.fixed,
+          elevation: 10,
+          onTap: (index) {
+            setState(() {
+              _currentIndex = index;
+            });
+            switch (index) {
+              case 0:
+                Navigator.pushNamed(context, '/text-to-voice');
+                break;
+              case 1:
+                Navigator.pushNamed(context, '/voice-to-text');
+                break;
+              case 2:
+                Navigator.pushNamed(context, '/file-to-text');
+                break;
+            }
+          },
+          items: [
+            BottomNavigationBarItem(
+              icon: Container(
+                padding: const EdgeInsets.all(5),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(10),
+                  color: _currentIndex == 0
+                      ? Colors.cyanAccent.withOpacity(0.2)
+                      : Colors.transparent,
+                ),
+                child: const Icon(Icons.text_snippet),
+              ),
+              label: 'Text to Voice',
+            ),
+            BottomNavigationBarItem(
+              icon: Container(
+                padding: const EdgeInsets.all(5),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(10),
+                  color: _currentIndex == 1
+                      ? Colors.cyanAccent.withOpacity(0.2)
+                      : Colors.transparent,
+                ),
+                child: const Icon(Icons.mic),
+              ),
+              label: 'Voice to Text',
+            ),
+            BottomNavigationBarItem(
+              icon: Container(
+                padding: const EdgeInsets.all(5),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(10),
+                  color: _currentIndex == 2
+                      ? Colors.cyanAccent.withOpacity(0.2)
+                      : Colors.transparent,
+                ),
+                child: const Icon(Icons.insert_drive_file),
+              ),
+              label: 'File to Text',
+            ),
+          ],
         ),
       ),
     );
@@ -572,7 +876,10 @@ class _HomePageState extends State<HomePage> {
           children: [
             StreamBuilder<DocumentSnapshot>(
               stream: user != null
-                  ? FirebaseFirestore.instance.collection('users').doc(user.uid).snapshots()
+                  ? FirebaseFirestore.instance
+                  .collection('users')
+                  .doc(user.uid)
+                  .snapshots()
                   : Stream<DocumentSnapshot>.empty(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
@@ -585,17 +892,15 @@ class _HomePageState extends State<HomePage> {
                       user?.email ?? 'No email',
                       style: const TextStyle(fontSize: 14),
                     ),
-                    currentAccountPicture: const CircleAvatar(
-                      backgroundColor: Colors.cyanAccent,
+                    currentAccountPicture: CircleAvatar(
+                      backgroundColor: Colors.cyanAccent[700],
                       child: Text(
-                        'L',
-                        style: TextStyle(fontSize: 24),
+                        user?.email?.substring(0, 1).toUpperCase() ?? 'U',
+                        style: const TextStyle(fontSize: 24),
                       ),
                     ),
                     decoration: BoxDecoration(
-                      color: Theme.of(context).brightness == Brightness.dark
-                          ? Colors.grey[900]
-                          : Colors.blue[900],
+                      color: Colors.cyanAccent[700]?.withOpacity(0.8),
                     ),
                   );
                 }
@@ -610,17 +915,15 @@ class _HomePageState extends State<HomePage> {
                       user?.email ?? 'No email',
                       style: const TextStyle(fontSize: 14),
                     ),
-                    currentAccountPicture: const CircleAvatar(
-                      backgroundColor: Colors.cyanAccent,
-                      child: Text(
+                    currentAccountPicture: CircleAvatar(
+                      backgroundColor: Colors.cyanAccent[700],
+                      child: const Text(
                         'E',
                         style: TextStyle(fontSize: 24),
                       ),
                     ),
                     decoration: BoxDecoration(
-                      color: Theme.of(context).brightness == Brightness.dark
-                          ? Colors.grey[900]
-                          : Colors.blue[900],
+                      color: Colors.cyanAccent[700]?.withOpacity(0.8),
                     ),
                   );
                 }
@@ -635,14 +938,15 @@ class _HomePageState extends State<HomePage> {
                 return UserAccountsDrawerHeader(
                   accountName: Text(
                     username,
-                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    style: const TextStyle(
+                        fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                   accountEmail: Text(
                     user?.email ?? 'No email',
                     style: const TextStyle(fontSize: 14),
                   ),
                   currentAccountPicture: CircleAvatar(
-                    backgroundColor: Colors.cyanAccent,
+                    backgroundColor: Colors.cyanAccent[700],
                     child: photoUrl != null
                         ? ClipOval(
                       child: Image.network(
@@ -653,7 +957,8 @@ class _HomePageState extends State<HomePage> {
                         errorBuilder: (context, error, stackTrace) {
                           debugPrint('Error loading profile image: $error');
                           return Text(
-                            user?.email?.substring(0, 1).toUpperCase() ?? 'G',
+                            user?.email?.substring(0, 1).toUpperCase() ??
+                                'G',
                             style: const TextStyle(fontSize: 24),
                           );
                         },
@@ -665,69 +970,84 @@ class _HomePageState extends State<HomePage> {
                     ),
                   ),
                   decoration: BoxDecoration(
-                    color: Theme.of(context).brightness == Brightness.dark
-                        ? Colors.grey[900]
-                        : Colors.blue[900],
+                    color: Colors.cyanAccent[700]?.withOpacity(0.8),
                   ),
                 );
               },
             ),
-            _buildDrawerItem(
-              icon: Icons.insert_drive_file,
-              text: 'File to Text',
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.pushNamed(context, '/file-to-text');
-              },
+            Expanded(
+              child: ListView(
+                padding: EdgeInsets.zero,
+                children: [
+                  _buildDrawerItem(
+                    icon: Icons.insert_drive_file,
+                    text: 'File to Text',
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.pushNamed(context, '/file-to-text');
+                    },
+                  ),
+                  _buildDrawerItem(
+                    icon: Icons.mic,
+                    text: 'Voice to Text',
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.pushNamed(context, '/voice-to-text');
+                    },
+                  ),
+                  _buildDrawerItem(
+                    icon: Icons.text_snippet,
+                    text: 'Text to Voice',
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.pushNamed(context, '/text-to-voice');
+                    },
+                  ),
+                  const Divider(height: 1),
+                  _buildDrawerItem(
+                    icon: Icons.settings,
+                    text: 'Settings',
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const SettingsPage()),
+                      );
+                    },
+                  ),
+                  _buildDrawerSwitchItem(
+                    icon: Icons.brightness_6,
+                    text: 'Dark Mode',
+                    value: themeProvider.themeMode == ThemeMode.dark,
+                    onChanged: (value) {
+                      themeProvider.toggleTheme(value);
+                    },
+                  ),
+                ],
+              ),
             ),
-            _buildDrawerItem(
-              icon: Icons.mic,
-              text: 'Voice to Text',
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.pushNamed(context, '/voice-to-text');
-              },
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: ElevatedButton.icon(
+                icon: const Icon(Icons.logout, size: 20),
+                label: const Text('Logout'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.red[400],
+                  foregroundColor: Colors.white,
+                  minimumSize: const Size(double.infinity, 50),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                onPressed: () async {
+                  await FirebaseAuth.instance.signOut();
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(builder: (context) => LoginOptions()),
+                  );
+                },
+              ),
             ),
-            _buildDrawerItem(
-              icon: Icons.text_snippet,
-              text: 'Text to Voice',
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.pushNamed(context, '/text-to-voice');
-              },
-            ),
-            _buildDrawerItem(
-              icon: Icons.settings,
-              text: 'Settings',
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const SettingsPage()),
-                );
-              },
-            ),
-            _buildDrawerSwitchItem(
-              icon: Icons.brightness_6,
-              text: 'Dark Mode',
-              value: themeProvider.themeMode == ThemeMode.dark,
-              onChanged: (value) {
-                themeProvider.toggleTheme(value);
-              },
-            ),
-            const Spacer(),
-            _buildDrawerItem(
-              icon: Icons.logout,
-              text: 'Logout',
-              onTap: () async {
-                await FirebaseAuth.instance.signOut();
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(builder: (context) => LoginOptions()),
-                );
-              },
-            ),
-            const SizedBox(height: 32),
           ],
         ),
       ),
@@ -743,7 +1063,7 @@ class _HomePageState extends State<HomePage> {
       leading: Icon(
         icon,
         size: 24,
-        color: Theme.of(context).iconTheme.color,
+        color: Colors.cyanAccent[700],
       ),
       title: Text(
         text,
@@ -766,7 +1086,7 @@ class _HomePageState extends State<HomePage> {
       leading: Icon(
         icon,
         size: 24,
-        color: Theme.of(context).iconTheme.color,
+        color: Colors.cyanAccent[700],
       ),
       title: Text(
         text,
@@ -778,11 +1098,12 @@ class _HomePageState extends State<HomePage> {
       trailing: Switch(
         value: value,
         onChanged: onChanged,
-        activeColor: Colors.blue,
+        activeColor: Colors.cyanAccent[700],
       ),
     );
   }
 }
+
 
 class _HistoryListView extends StatelessWidget {
   final String collectionName;

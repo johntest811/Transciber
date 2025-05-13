@@ -180,7 +180,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   //Adjust Space at the Top
                   SizedBox(height: 150),
                   const Text(
-                    'Transcify',
+                    'Transcrify',
                     style: TextStyle(
                       fontSize: 26,
                       fontWeight: FontWeight.bold,
