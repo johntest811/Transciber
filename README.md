@@ -15,6 +15,4 @@ For help getting started with Flutter development, view the
 [online documentation](https://docs.flutter.dev/), which offers tutorials,
 samples, guidance on mobile development, and a full API reference.
 
-## Nigger
 
-![Alt text](https://upload.wikimedia.org/wikipedia/commons/2/2f/Glasto2023_%28181_of_468%29_%2853009327490%29_%28cropped%29.jpg)
