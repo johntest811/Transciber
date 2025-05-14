@@ -298,8 +298,12 @@ class _TTSHomePageState extends State<TTSHomePage> {
     super.dispose();
   }
 
+
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDarkMode = theme.brightness == Brightness.dark;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Text to Speech'),
@@ -309,133 +313,229 @@ class _TTSHomePageState extends State<TTSHomePage> {
             MaterialPageRoute(builder: (context) => Home()),
           ),
         ),
+        elevation: 0,
+        centerTitle: true,
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(20.0),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            TextField(
-              controller: textController,
-              maxLines: 5,
-              decoration: const InputDecoration(
-                border: OutlineInputBorder(),
-                labelText: 'Enter text to speak',
-                hintText: 'Type something...',
+            Card(
+              elevation: 2,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  children: [
+                    TextField(
+                      controller: textController,
+                      maxLines: 5,
+                      decoration: InputDecoration(
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide(
+                            color: theme.dividerColor,
+                          ),
+                        ),
+                        labelText: 'Enter text to speak',
+                        hintText: 'Type something...',
+                        filled: true,
+                        fillColor: isDarkMode
+                            ? Colors.grey[900]
+                            : Colors.grey[50],
+                      ),
+                      style: theme.textTheme.bodyLarge,
+                    ),
+                    const SizedBox(height: 16),
+                    DropdownButtonFormField<String>(
+                      value: selectedLanguage,
+                      decoration: InputDecoration(
+                        labelText: 'Select Language',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        filled: true,
+                        fillColor: isDarkMode
+                            ? Colors.grey[900]
+                            : Colors.grey[50],
+                      ),
+                      dropdownColor: theme.cardColor,
+                      items: languages.map((language) {
+                        return DropdownMenuItem<String>(
+                          value: language['code'],
+                          child: Text(
+                            language['displayName']!,
+                            style: theme.textTheme.bodyLarge,
+                          ),
+                        );
+                      }).toList(),
+                      onChanged: (value) {
+                        setState(() {
+                          selectedLanguage = value;
+                        });
+                      },
+                      isExpanded: true,
+                      style: theme.textTheme.bodyLarge,
+                    ),
+                  ],
+                ),
               ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 24),
 
-            DropdownButtonFormField<String>(
-              value: selectedLanguage,
-              decoration: InputDecoration(
-                labelText: 'Select Language',
-                border: const OutlineInputBorder(),
+            // Voice Settings Card
+            Card(
+              elevation: 2,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
               ),
-              dropdownColor: Theme.of(context).cardColor,
-              items: languages.map((language) {
-                return DropdownMenuItem<String>(
-                  value: language['code'],
-                  child: Text(language['displayName']!),
-                );
-              }).toList(),
-              onChanged: (value) {
-                setState(() {
-                  selectedLanguage = value;
-                });
-              },
-              isExpanded: true,
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                      'Voice Settings',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    _buildSliderWithIcon(
+                      context,
+                      icon: Icons.volume_up,
+                      label: 'Volume',
+                      value: volume,
+                      min: 0.0,
+                      max: 1.0,
+                      onChanged: (value) async {
+                        setState(() {
+                          volume = value;
+                        });
+                        await flutterTts.setVolume(value);
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    _buildSliderWithIcon(
+                      context,
+                      icon: Icons.trending_up,
+                      label: 'Pitch',
+                      value: pitch,
+                      min: 0.5,
+                      max: 2.0,
+                      onChanged: (value) async {
+                        setState(() {
+                          pitch = value;
+                        });
+                        await flutterTts.setPitch(value);
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    _buildSliderWithIcon(
+                      context,
+                      icon: Icons.speed,
+                      label: 'Speech Rate',
+                      value: rate,
+                      min: 0.0,
+                      max: 1.0,
+                      onChanged: (value) async {
+                        setState(() {
+                          rate = value;
+                        });
+                        await flutterTts.setSpeechRate(value);
+                      },
+                    ),
+                  ],
+                ),
+              ),
             ),
+            const SizedBox(height: 24),
 
-            const SizedBox(height: 20),
-
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Text('Volume: ${volume.toStringAsFixed(1)}'),
-                Slider(
-                  value: volume,
-                  min: 0.0,
-                  max: 1.0,
-                  divisions: 10,
-                  onChanged: (value) async {
-                    setState(() {
-                      volume = value;
-                    });
-                    await flutterTts.setVolume(value);
-                  },
-                ),
-                Text('Pitch: ${pitch.toStringAsFixed(1)}'),
-                Slider(
-                  value: pitch,
-                  min: 0.5,
-                  max: 2.0,
-                  divisions: 15,
-                  onChanged: (value) async {
-                    setState(() {
-                      pitch = value;
-                    });
-                    await flutterTts.setPitch(value);
-                  },
-                ),
-                Text('Speech Rate: ${rate.toStringAsFixed(1)}'),
-                Slider(
-                  value: rate,
-                  min: 0.0,
-                  max: 1.0,
-                  divisions: 10,
-                  onChanged: (value) async {
-                    setState(() {
-                      rate = value;
-                    });
-                    await flutterTts.setSpeechRate(value);
-                  },
-                ),
-              ],
-            ),
-            const SizedBox(height: 20),
-
+            // Action Buttons
             Row(
               children: [
                 Expanded(
-                  child: ElevatedButton(
+                  child: ElevatedButton.icon(
+                    icon: Icon(
+                      isSpeaking ? Icons.stop : Icons.play_arrow,
+                      size: 24,
+                      color: Colors.white,
+                    ),
+                    label: Text(
+                      isSpeaking ? 'Stop' : 'Speak',
+                      style: const TextStyle(fontSize: 16,
+                      color: Colors.white),
+                    ),
                     onPressed: isSpeaking ? _stop : _speak,
-                    child: Text(
-                      isSpeaking ? 'Stop Speaking' : 'Speak',
-                      style: const TextStyle(fontSize: 18),
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      backgroundColor: isSpeaking
+                          ? Colors.redAccent
+                          : theme.primaryColor,
                     ),
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 12),
             Row(
               children: [
                 Expanded(
-                  child: ElevatedButton(
+                  child: ElevatedButton.icon(
+                    icon: isSaving
+                        ? const SizedBox(
+                      width: 24,
+                      height: 24,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
+                        : const Icon(Icons.save_alt, size: 24),
+                    label: Text(
+                      isSaving ? 'Saving...' : 'Save as MP3',
+                      style: const TextStyle(fontSize: 16),
+                    ),
                     onPressed: isSaving ? null : _saveToFile,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue,
-                    ),
-                    child: isSaving
-                        ? const CircularProgressIndicator(color: Colors.white)
-                        : const Text(
-                      'Save as MP3',
-                      style: TextStyle(fontSize: 18, color: Colors.white),
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      backgroundColor: Colors.blueAccent,
                     ),
                   ),
                 ),
-                const SizedBox(width: 10),
+                const SizedBox(width: 12),
                 Expanded(
-                  child: ElevatedButton(
+                  child: ElevatedButton.icon(
+                    icon: isSavingToHistory
+                        ? const SizedBox(
+                      width: 24,
+                      height: 24,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
+                        : const Icon(Icons.history, size: 24),
+                    label: Text(
+                      isSavingToHistory ? 'Saving...' : 'Save History',
+                      style: const TextStyle(fontSize: 16),
+                    ),
                     onPressed: isSavingToHistory ? null : _saveToHistory,
                     style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                       backgroundColor: Colors.green,
-                    ),
-                    child: isSavingToHistory
-                        ? const CircularProgressIndicator(color: Colors.white)
-                        : const Text(
-                      'Save to History',
-                      style: TextStyle(fontSize: 18, color: Colors.white),
                     ),
                   ),
                 ),
@@ -444,6 +544,48 @@ class _TTSHomePageState extends State<TTSHomePage> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildSliderWithIcon(
+      BuildContext context, {
+        required IconData icon,
+        required String label,
+        required double value,
+        required double min,
+        required double max,
+        required ValueChanged<double> onChanged,
+      }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(icon, size: 20),
+            const SizedBox(width: 8),
+            Text(
+              label,
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
+            const Spacer(),
+            Text(
+              value.toStringAsFixed(1),
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+        Slider(
+          value: value,
+          min: min,
+          max: max,
+          divisions: 10,
+          onChanged: onChanged,
+          activeColor: Theme.of(context).primaryColor,
+          inactiveColor: Theme.of(context).primaryColor.withOpacity(0.3),
+        ),
+      ],
     );
   }
 }

@@ -28,6 +28,20 @@ class MyApp extends StatelessWidget {
       darkTheme: ThemeData.dark(),
       themeMode: themeProvider.themeMode,
       home: const SplashScreen(),
+      navigatorKey: NavigationService.navigatorKey, // Add this line
     );
+  }
+}
+
+// Add this class for navigation management
+class NavigationService {
+  static final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+
+  static Future<dynamic> navigateTo(String routeName) {
+    return navigatorKey.currentState!.pushNamed(routeName);
+  }
+
+  static void goBack() {
+    return navigatorKey.currentState!.pop();
   }
 }

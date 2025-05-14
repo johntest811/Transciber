@@ -92,6 +92,12 @@ class Home extends StatelessWidget {
           backgroundColor: Colors.cyanAccent[400],
           foregroundColor: Colors.black,
         ),
+        // Volume knob color is already white in dark mode
+        sliderTheme: SliderThemeData(
+          thumbColor: Colors.white,
+          activeTrackColor: Colors.white,
+          inactiveTrackColor: Colors.grey,
+        ),
       ),
       themeMode: Provider.of<ThemeProvider>(context).themeMode,
       home: const HomePage(),
@@ -247,7 +253,12 @@ class _HomePageState extends State<HomePage> {
         actions: [
           IconButton(
             icon: Icon(Icons.search, color: Theme.of(context).iconTheme.color),
-            onPressed: () {},
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const SearchPage()),
+              );
+            },
           ),
         ],
       ),
@@ -680,7 +691,7 @@ class _HomePageState extends State<HomePage> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      '$words Words • $date',
+                      '$words Words â€¢ $date',
                       style: TextStyle(
                         fontSize: 12,
                         color: Theme.of(context)
@@ -756,7 +767,7 @@ class _HomePageState extends State<HomePage> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      '$words Words • $date',
+                      '$words Words â€¢ $date',
                       style: TextStyle(
                         fontSize: 12,
                         color: Theme.of(context)
@@ -895,7 +906,7 @@ class _HomePageState extends State<HomePage> {
                     currentAccountPicture: CircleAvatar(
                       backgroundColor: Colors.cyanAccent[700],
                       child: Text(
-                        user?.email?.substring(0, 1).toUpperCase() ?? 'U',
+                        user?.email?.isNotEmpty == true ? user!.email!.substring(0, 1).toUpperCase() : 'U',
                         style: const TextStyle(fontSize: 24),
                       ),
                     ),
@@ -928,11 +939,16 @@ class _HomePageState extends State<HomePage> {
                   );
                 }
 
-                final username = snapshot.hasData && snapshot.data!.exists
-                    ? snapshot.data!['username'] ?? user?.displayName ?? 'Guest'
+                // Safely check if data exists and if the fields exist before accessing them
+                final userData = snapshot.data?.data() as Map<String, dynamic>?;
+
+                final username = userData != null && userData.containsKey('username')
+                    ? userData['username'] as String? ?? user?.displayName ?? 'Guest'
                     : user?.displayName ?? 'Guest';
-                final photoUrl = snapshot.hasData && snapshot.data!.exists
-                    ? snapshot.data!['photoUrl'] ?? user?.photoURL
+
+                // Check if 'photoUrl' exists in the document
+                final photoUrl = userData != null && userData.containsKey('photoUrl')
+                    ? userData['photoUrl'] as String?
                     : user?.photoURL;
 
                 return UserAccountsDrawerHeader(
@@ -957,15 +973,14 @@ class _HomePageState extends State<HomePage> {
                         errorBuilder: (context, error, stackTrace) {
                           debugPrint('Error loading profile image: $error');
                           return Text(
-                            user?.email?.substring(0, 1).toUpperCase() ??
-                                'G',
+                            user?.email?.isNotEmpty == true ? user!.email!.substring(0, 1).toUpperCase() : 'G',
                             style: const TextStyle(fontSize: 24),
                           );
                         },
                       ),
                     )
                         : Text(
-                      user?.email?.substring(0, 1).toUpperCase() ?? 'G',
+                      user?.email?.isNotEmpty == true ? user!.email!.substring(0, 1).toUpperCase() : 'G',
                       style: const TextStyle(fontSize: 24),
                     ),
                   ),
@@ -1096,6 +1111,7 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+
   Widget _buildDrawerSwitchItem({
     required IconData icon,
     required String text,
@@ -1179,7 +1195,7 @@ class _HistoryListView extends StatelessWidget {
                 child: ListTile(
                   title: Text(item['title'] ?? 'Untitled'),
                   subtitle: Text(
-                    '${item['words']?.toString() ?? '0'} Words • ${item['date'] ?? 'No date'}',
+                    '${item['words']?.toString() ?? '0'} Words â€¢ ${item['date'] ?? 'No date'}',
                   ),
                   trailing: IconButton(
                     icon: const Icon(Icons.delete),
@@ -1273,6 +1289,274 @@ class _HistoryItemView extends StatefulWidget {
 
   @override
   State<_HistoryItemView> createState() => _HistoryItemViewState();
+}
+class SearchPage extends StatefulWidget {
+  const SearchPage({super.key});
+
+  @override
+  State<SearchPage> createState() => _SearchPageState();
+}
+
+class _SearchPageState extends State<SearchPage> {
+  final TextEditingController _searchController = TextEditingController();
+  List<DocumentSnapshot> _searchResults = [];
+  bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _searchController.addListener(_onSearchChanged);
+  }
+
+  @override
+  void dispose() {
+    _searchController.removeListener(_onSearchChanged);
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _onSearchChanged() {
+    if (_searchController.text.isEmpty) {
+      setState(() {
+        _searchResults = [];
+      });
+      return;
+    }
+    _performSearch(_searchController.text);
+  }
+
+  Future<void> _performSearch(String query) async {
+    if (query.isEmpty) return;
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      setState(() {
+        _isLoading = false;
+        _searchResults = [];
+      });
+      return;
+    }
+
+    try {
+      // Search recordings
+      final recordingsQuery = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .collection('recordings')
+          .where('title', isGreaterThanOrEqualTo: query)
+          .where('title', isLessThanOrEqualTo: '$query\uf8ff')
+          .get();
+
+      // Search transcriptions
+      final transcriptionsQuery = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .collection('transcriptions')
+          .where('title', isGreaterThanOrEqualTo: query)
+          .where('title', isLessThanOrEqualTo: '$query\uf8ff')
+          .get();
+
+      // Search TTS
+      final ttsQuery = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .collection('tts')
+          .where('title', isGreaterThanOrEqualTo: query)
+          .where('title', isLessThanOrEqualTo: '$query\uf8ff')
+          .get();
+
+      // Combine results
+      final results = [
+        ...recordingsQuery.docs,
+        ...transcriptionsQuery.docs,
+        ...ttsQuery.docs,
+      ];
+
+      setState(() {
+        _searchResults = results;
+        _isLoading = false;
+      });
+    } catch (e) {
+      debugPrint('Search error: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Search error: $e')),
+      );
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  void _onItemTap(DocumentSnapshot doc) {
+    final collection = doc.reference.parent.id;
+    if (collection == 'recordings') {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => _HistoryItemView(
+            title: doc['title'] ?? 'Recording',
+            content: doc['text'] ?? '',
+            type: 'recording',
+            audioPath: doc['audioFilePath'],
+            audioDownloadUrl: doc['audioDownloadUrl'],
+            docId: doc.id,
+          ),
+        ),
+      );
+    } else if (collection == 'transcriptions') {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => _HistoryItemView(
+            title: doc['title'] ?? 'Transcription',
+            content: doc['text'] ?? '',
+            type: 'transcription',
+            docId: doc.id,
+          ),
+        ),
+      );
+    } else if (collection == 'tts') {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => _HistoryItemView(
+            title: doc['title'] ?? 'TTS',
+            content: doc['text'] ?? '',
+            type: 'tts',
+            audioPath: doc['audioFilePath'],
+            audioDownloadUrl: doc['audioDownloadUrl'],
+            docId: doc.id,
+          ),
+        ),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: TextField(
+          controller: _searchController,
+          autofocus: true,
+          decoration: InputDecoration(
+            hintText: 'Search recordings, transcriptions...',
+            border: InputBorder.none,
+            hintStyle: TextStyle(
+              color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.5),
+            ),
+          ),
+          style: TextStyle(
+            color: Theme.of(context).textTheme.bodyLarge?.color,
+          ),
+        ),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Navigator.pop(context),
+        ),
+      ),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : _searchResults.isEmpty
+          ? Center(
+        child: Text(
+          _searchController.text.isEmpty
+              ? 'Enter a search term'
+              : 'No results found',
+          style: TextStyle(
+            color: Theme.of(context).textTheme.bodyMedium?.color,
+          ),
+        ),
+      )
+          : ListView.builder(
+        padding: const EdgeInsets.all(16),
+        itemCount: _searchResults.length,
+        itemBuilder: (context, index) {
+          final doc = _searchResults[index];
+          final collection = doc.reference.parent.id;
+          return Card(
+            margin: const EdgeInsets.only(bottom: 16),
+            child: ListTile(
+              title: Text(doc['title'] ?? 'Untitled'),
+              subtitle: Text(
+                '${collection.toUpperCase()} â€¢ ${doc['words']?.toString() ?? '0'} Words â€¢ ${doc['date'] ?? 'No date'}',
+              ),
+              trailing: IconButton(
+                icon: const Icon(Icons.delete),
+                onPressed: () async {
+                  final confirmed = await showDialog<bool>(
+                    context: context,
+                    builder: (context) => AlertDialog(
+                      title: const Text('Confirm Delete'),
+                      content: const Text('Are you sure you want to delete this item?'),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(context, false),
+                          child: const Text('Cancel'),
+                        ),
+                        TextButton(
+                          onPressed: () => Navigator.pop(context, true),
+                          child: const Text('Delete', style: TextStyle(color: Colors.red)),
+                        ),
+                      ],
+                    ),
+                  );
+
+                  if (confirmed == true) {
+                    await _deleteItem(collection, doc.id);
+                    setState(() {
+                      _searchResults.removeAt(index);
+                    });
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Item deleted')),
+                    );
+                  }
+                },
+              ),
+              onTap: () => _onItemTap(doc),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Future<void> _deleteItem(String collectionName, String docId) async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    try {
+      final doc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .collection(collectionName)
+          .doc(docId)
+          .get();
+
+      await doc.reference.delete();
+
+      if (doc['audioDownloadUrl'] != null) {
+        final storageRef = FirebaseStorage.instance.refFromURL(doc['audioDownloadUrl']);
+        await storageRef.delete();
+        debugPrint('Deleted audio file from Firebase Storage: ${doc['audioDownloadUrl']}');
+      }
+
+      if (doc['audioFilePath'] != null) {
+        final file = File(doc['audioFilePath']);
+        if (await file.exists()) {
+          await file.delete();
+          debugPrint('Deleted local file: ${file.path}');
+        }
+      }
+    } catch (e) {
+      debugPrint('Error deleting item: $e');
+      rethrow;
+    }
+  }
 }
 
 class _HistoryItemViewState extends State<_HistoryItemView> {
@@ -1596,6 +1880,7 @@ class _HistoryItemViewState extends State<_HistoryItemView> {
                             icon: Icon(
                               _isPlaying ? Icons.pause : Icons.play_arrow,
                               size: 32,
+                              color: Colors.purple, // Changed to violet (purple) for the Speak button
                             ),
                             onPressed: widget.audioDownloadUrl != null ? _playPauseAudio : null,
                           ),
