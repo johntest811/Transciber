@@ -13,12 +13,12 @@ import 'package:audio_session/audio_session.dart';
 import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
-import 'dart:developer'; // For debugPrint
+import 'dart:developer';
 import 'settings.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:firebase_storage/firebase_storage.dart';
-import 'package:flutter/services.dart'; // Added for Clipboard
+import 'package:flutter/services.dart';
 
 void main() {
   runApp(
@@ -35,8 +35,13 @@ class Home extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Trancify',
+      debugShowCheckedModeBanner: false,
+      title: 'Transcrify',
       theme: ThemeData.light().copyWith(
+        colorScheme: ColorScheme.light(
+          primary: Colors.cyanAccent[700]!,
+          secondary: Colors.cyanAccent[400]!,
+        ),
         appBarTheme: AppBarTheme(
           backgroundColor: Colors.white,
           iconTheme: const IconThemeData(color: Colors.black),
@@ -45,17 +50,26 @@ class Home extends StatelessWidget {
             fontSize: 20,
             fontWeight: FontWeight.bold,
           ),
+          elevation: 0,
         ),
         cardColor: Colors.white,
         cardTheme: CardTheme(
           elevation: 2,
           shadowColor: Colors.black.withOpacity(0.1),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(15),
           ),
+        ),
+        floatingActionButtonTheme: FloatingActionButtonThemeData(
+          backgroundColor: Colors.cyanAccent[700],
+          foregroundColor: Colors.white,
         ),
       ),
       darkTheme: ThemeData.dark().copyWith(
+        colorScheme: ColorScheme.dark(
+          primary: Colors.cyanAccent[400]!,
+          secondary: Colors.cyanAccent[200]!,
+        ),
         appBarTheme: AppBarTheme(
           backgroundColor: Colors.grey[900],
           iconTheme: const IconThemeData(color: Colors.white),
@@ -64,14 +78,19 @@ class Home extends StatelessWidget {
             fontSize: 20,
             fontWeight: FontWeight.bold,
           ),
+          elevation: 0,
         ),
         cardColor: Colors.grey[800],
         cardTheme: CardTheme(
           elevation: 4,
           shadowColor: Colors.black.withOpacity(0.3),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(15),
           ),
+        ),
+        floatingActionButtonTheme: FloatingActionButtonThemeData(
+          backgroundColor: Colors.cyanAccent[400],
+          foregroundColor: Colors.black,
         ),
       ),
       themeMode: Provider.of<ThemeProvider>(context).themeMode,
@@ -187,6 +206,14 @@ class _HomePageState extends State<HomePage> {
               const Text('Please log in to view your history'),
               const SizedBox(height: 20),
               ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.cyanAccent[700],
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 12),
+                ),
                 onPressed: () {
                   Navigator.pushReplacement(
                     context,
@@ -205,17 +232,17 @@ class _HomePageState extends State<HomePage> {
       key: _scaffoldKey,
       appBar: AppBar(
         backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
-        elevation: Theme.of(context).brightness == Brightness.dark ? 0 : 2,
-        shadowColor: Theme.of(context).brightness == Brightness.dark
-            ? Colors.transparent
-            : Colors.grey.withOpacity(0.3),
+        elevation: 0,
         leading: IconButton(
           icon: Icon(Icons.menu, color: Theme.of(context).iconTheme.color),
           onPressed: () => _scaffoldKey.currentState?.openDrawer(),
         ),
         title: Text(
-          'Welcome to Trancify',
-          style: TextStyle(color: Theme.of(context).textTheme.titleLarge?.color),
+          'Welcome to Transcrify',
+          style: TextStyle(
+            color: Theme.of(context).textTheme.titleLarge?.color,
+            fontWeight: FontWeight.bold,
+          ),
         ),
         actions: [
           IconButton(
@@ -231,33 +258,62 @@ class _HomePageState extends State<HomePage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    'Recordings',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              // Header with greeting
+              Padding(
+                padding: const EdgeInsets.only(bottom: 16.0),
+                child: Text(
+                  'Hello, ${user.displayName ?? 'User'}!',
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).textTheme.titleLarge?.color,
                   ),
-                  TextButton(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => _HistoryListView(
-                            collectionName: 'recordings',
-                            title: 'All Recordings',
-                            onItemTap: _viewRecording,
-                          ),
-                        ),
-                      );
-                    },
-                    child: const Text('See all'),
+                ),
+              ),
+
+              // Quick actions row
+              const SizedBox(height: 16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  _buildQuickAction(
+                    icon: Icons.mic,
+                    label: 'Record',
+                    onTap: () => Navigator.pushNamed(context, '/voice-to-text'),
+                  ),
+                  _buildQuickAction(
+                    icon: Icons.text_snippet,
+                    label: 'Text to Speech',
+                    onTap: () => Navigator.pushNamed(context, '/text-to-voice'),
+                  ),
+                  _buildQuickAction(
+                    icon: Icons.insert_drive_file,
+                    label: 'File to Text',
+                    onTap: () => Navigator.pushNamed(context, '/file-to-text'),
                   ),
                 ],
               ),
+              const SizedBox(height: 32),
+
+              // Recent Recordings Section
+              _buildSectionHeader(
+                title: 'Recent Recordings',
+                onSeeAll: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => _HistoryListView(
+                        collectionName: 'recordings',
+                        title: 'All Recordings',
+                        onItemTap: _viewRecording,
+                      ),
+                    ),
+                  );
+                },
+              ),
               const SizedBox(height: 10),
               SizedBox(
-                height: 120,
+                height: 165,
                 child: StreamBuilder<QuerySnapshot>(
                   stream: _firestore
                       .collection('users')
@@ -271,7 +327,12 @@ class _HomePageState extends State<HomePage> {
                       return const Center(child: CircularProgressIndicator());
                     }
                     if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                      return const Center(child: Text('No recordings yet'));
+                      return _buildEmptyState(
+                        icon: Icons.mic_none,
+                        message: 'No recordings yet',
+                        actionText: 'Start Recording',
+                        onAction: () => Navigator.pushNamed(context, '/voice-to-text'),
+                      );
                     }
 
                     final recordings = snapshot.data!.docs;
@@ -290,30 +351,23 @@ class _HomePageState extends State<HomePage> {
                   },
                 ),
               ),
-              const SizedBox(height: 30),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    'Transcriptions',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                  TextButton(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => _HistoryListView(
-                            collectionName: 'transcriptions',
-                            title: 'All Transcriptions',
-                            onItemTap: _viewTranscription,
-                          ),
-                        ),
-                      );
-                    },
-                    child: const Text('See all'),
-                  ),
-                ],
+              const SizedBox(height: 32),
+
+              // Recent Transcriptions Section
+              _buildSectionHeader(
+                title: 'Recent Transcriptions',
+                onSeeAll: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => _HistoryListView(
+                        collectionName: 'transcriptions',
+                        title: 'All Transcriptions',
+                        onItemTap: _viewTranscription,
+                      ),
+                    ),
+                  );
+                },
               ),
               const SizedBox(height: 10),
               StreamBuilder<QuerySnapshot>(
@@ -329,7 +383,12 @@ class _HomePageState extends State<HomePage> {
                     return const Center(child: CircularProgressIndicator());
                   }
                   if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                    return const Center(child: Text('No transcriptions yet'));
+                    return _buildEmptyState(
+                      icon: Icons.text_snippet,
+                      message: 'No transcriptions yet',
+                      actionText: 'Create Transcription',
+                      onAction: () => Navigator.pushNamed(context, '/file-to-text'),
+                    );
                   }
 
                   final transcriptions = snapshot.data!.docs;
@@ -345,30 +404,23 @@ class _HomePageState extends State<HomePage> {
                   );
                 },
               ),
-              const SizedBox(height: 30),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    'Text-to-Speech',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                  TextButton(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => _HistoryListView(
-                            collectionName: 'tts',
-                            title: 'All TTS Conversions',
-                            onItemTap: _viewTTS,
-                          ),
-                        ),
-                      );
-                    },
-                    child: const Text('See all'),
-                  ),
-                ],
+              const SizedBox(height: 32),
+
+              // Recent TTS Section
+              _buildSectionHeader(
+                title: 'Recent Text-to-Speech',
+                onSeeAll: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => _HistoryListView(
+                        collectionName: 'tts',
+                        title: 'All TTS Conversions',
+                        onItemTap: _viewTTS,
+                      ),
+                    ),
+                  );
+                },
               ),
               const SizedBox(height: 10),
               StreamBuilder<QuerySnapshot>(
@@ -384,7 +436,12 @@ class _HomePageState extends State<HomePage> {
                     return const Center(child: CircularProgressIndicator());
                   }
                   if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                    return const Center(child: Text('No TTS conversions yet'));
+                    return _buildEmptyState(
+                      icon: Icons.volume_up,
+                      message: 'No TTS conversions yet',
+                      actionText: 'Try TTS',
+                      onAction: () => Navigator.pushNamed(context, '/text-to-voice'),
+                    );
                   }
 
                   final ttsItems = snapshot.data!.docs;
@@ -404,42 +461,100 @@ class _HomePageState extends State<HomePage> {
           ),
         ),
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _currentIndex,
-        backgroundColor:
-        Theme.of(context).bottomNavigationBarTheme.backgroundColor,
-        selectedItemColor:
-        Theme.of(context).bottomNavigationBarTheme.selectedItemColor,
-        unselectedItemColor:
-        Theme.of(context).bottomNavigationBarTheme.unselectedItemColor,
-        onTap: (index) {
-          setState(() {
-            _currentIndex = index;
-          });
-          switch (index) {
-            case 0:
-              Navigator.pushNamed(context, '/text-to-voice');
-              break;
-            case 1:
-              Navigator.pushNamed(context, '/voice-to-text');
-              break;
-            case 2:
-              Navigator.pushNamed(context, '/file-to-text');
-              break;
-          }
-        },
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.text_snippet),
-            label: 'Text to Voice',
+      bottomNavigationBar: _buildBottomNavigationBar(),
+    );
+  }
+
+  Widget _buildQuickAction({required IconData icon, required String label, required VoidCallback onTap}) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Column(
+        children: [
+          Container(
+            width: 60,
+            height: 60,
+            decoration: BoxDecoration(
+              color: Colors.cyanAccent.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(15),
+            ),
+            child: Icon(
+              icon,
+              size: 30,
+              color: Colors.cyanAccent[700],
+            ),
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.mic),
-            label: 'Voice to Text',
+          const SizedBox(height: 8),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              color: Theme.of(context).textTheme.bodyMedium?.color,
+            ),
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.insert_drive_file),
-            label: 'File to Text',
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSectionHeader({required String title, required VoidCallback onSeeAll}) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          title,
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: Theme.of(context).textTheme.titleLarge?.color,
+          ),
+        ),
+        TextButton(
+          onPressed: onSeeAll,
+          child: Text(
+            'See all',
+            style: TextStyle(
+              color: Colors.cyanAccent[700],
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildEmptyState({required IconData icon, required String message, required String actionText, required VoidCallback onAction}) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardColor,
+        borderRadius: BorderRadius.circular(15),
+      ),
+      child: Column(
+        children: [
+          Icon(
+            icon,
+            size: 40,
+            color: Colors.grey.withOpacity(0.5),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            message,
+            style: TextStyle(
+              color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.6),
+            ),
+          ),
+          const SizedBox(height: 15),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.cyanAccent[700],
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+            ),
+            onPressed: onAction,
+            child: Text(actionText),
           ),
         ],
       ),
@@ -450,11 +565,11 @@ class _HomePageState extends State<HomePage> {
     return GestureDetector(
       onTap: () => _viewRecording(doc),
       child: Container(
-        width: 150,
+        width: 160,
         margin: const EdgeInsets.only(right: 15),
         decoration: BoxDecoration(
           color: Theme.of(context).cardColor,
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(15),
           boxShadow: [
             BoxShadow(
               color: Theme.of(context).cardTheme.shadowColor ??
@@ -466,10 +581,24 @@ class _HomePageState extends State<HomePage> {
           ],
         ),
         child: Padding(
-          padding: const EdgeInsets.all(12.0),
+          padding: const EdgeInsets.all(16.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: Colors.cyanAccent.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(
+                  Icons.mic,
+                  size: 20,
+                  color: Colors.cyanAccent[700],
+                ),
+              ),
+              const SizedBox(height: 12),
               Text(
                 title,
                 style: TextStyle(
@@ -477,11 +606,14 @@ class _HomePageState extends State<HomePage> {
                   fontSize: 16,
                   color: Theme.of(context).textTheme.bodyLarge?.color,
                 ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
               ),
               const Spacer(),
               Text(
                 date,
                 style: TextStyle(
+                  fontSize: 12,
                   color: Theme.of(context)
                       .textTheme
                       .bodyMedium
@@ -504,7 +636,7 @@ class _HomePageState extends State<HomePage> {
         margin: const EdgeInsets.only(bottom: 15),
         decoration: BoxDecoration(
           color: Theme.of(context).cardColor,
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(15),
           boxShadow: [
             BoxShadow(
               color: Theme.of(context).cardTheme.shadowColor ??
@@ -515,23 +647,57 @@ class _HomePageState extends State<HomePage> {
             ),
           ],
         ),
-        child: ListTile(
-          title: Text(
-            title,
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              color: Theme.of(context).textTheme.bodyLarge?.color,
-            ),
-          ),
-          subtitle: Text(
-            '$words Words • $date',
-            style: TextStyle(
-              color: Theme.of(context)
-                  .textTheme
-                  .bodyMedium
-                  ?.color
-                  ?.withOpacity(0.7),
-            ),
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Row(
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: Colors.cyanAccent.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  Icons.text_snippet,
+                  size: 24,
+                  color: Colors.cyanAccent[700],
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Theme.of(context).textTheme.bodyLarge?.color,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '$words Words • $date',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Theme.of(context)
+                            .textTheme
+                            .bodyMedium
+                            ?.color
+                            ?.withOpacity(0.7),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(
+                Icons.chevron_right,
+                color: Theme.of(context).iconTheme.color?.withOpacity(0.5),
+              ),
+            ],
           ),
         ),
       ),
@@ -546,7 +712,7 @@ class _HomePageState extends State<HomePage> {
         margin: const EdgeInsets.only(bottom: 15),
         decoration: BoxDecoration(
           color: Theme.of(context).cardColor,
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(15),
           boxShadow: [
             BoxShadow(
               color: Theme.of(context).cardTheme.shadowColor ??
@@ -557,25 +723,143 @@ class _HomePageState extends State<HomePage> {
             ),
           ],
         ),
-        child: ListTile(
-          leading: const Icon(Icons.volume_up),
-          title: Text(
-            title,
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              color: Theme.of(context).textTheme.bodyLarge?.color,
-            ),
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Row(
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: Colors.cyanAccent.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  Icons.volume_up,
+                  size: 24,
+                  color: Colors.cyanAccent[700],
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Theme.of(context).textTheme.bodyLarge?.color,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '$words Words • $date',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Theme.of(context)
+                            .textTheme
+                            .bodyMedium
+                            ?.color
+                            ?.withOpacity(0.7),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(
+                Icons.chevron_right,
+                color: Theme.of(context).iconTheme.color?.withOpacity(0.5),
+              ),
+            ],
           ),
-          subtitle: Text(
-            '$words Words • $date',
-            style: TextStyle(
-              color: Theme.of(context)
-                  .textTheme
-                  .bodyMedium
-                  ?.color
-                  ?.withOpacity(0.7),
-            ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBottomNavigationBar() {
+    return Container(
+      decoration: BoxDecoration(
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 10,
+            spreadRadius: 0,
+            offset: const Offset(0, -2),
           ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(15)),
+        child: BottomNavigationBar(
+          currentIndex: _currentIndex,
+          backgroundColor: Theme.of(context).bottomAppBarTheme.color,
+          selectedItemColor: Colors.cyanAccent[700],
+          unselectedItemColor: Theme.of(context).bottomNavigationBarTheme.unselectedItemColor,
+          showSelectedLabels: true,
+          showUnselectedLabels: true,
+          type: BottomNavigationBarType.fixed,
+          elevation: 10,
+          onTap: (index) {
+            setState(() {
+              _currentIndex = index;
+            });
+            switch (index) {
+              case 0:
+                Navigator.pushNamed(context, '/text-to-voice');
+                break;
+              case 1:
+                Navigator.pushNamed(context, '/voice-to-text');
+                break;
+              case 2:
+                Navigator.pushNamed(context, '/file-to-text');
+                break;
+            }
+          },
+          items: [
+            BottomNavigationBarItem(
+              icon: Container(
+                padding: const EdgeInsets.all(5),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(10),
+                  color: _currentIndex == 0
+                      ? Colors.cyanAccent.withOpacity(0.2)
+                      : Colors.transparent,
+                ),
+                child: const Icon(Icons.text_snippet),
+              ),
+              label: 'Text to Voice',
+            ),
+            BottomNavigationBarItem(
+              icon: Container(
+                padding: const EdgeInsets.all(5),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(10),
+                  color: _currentIndex == 1
+                      ? Colors.cyanAccent.withOpacity(0.2)
+                      : Colors.transparent,
+                ),
+                child: const Icon(Icons.mic),
+              ),
+              label: 'Voice to Text',
+            ),
+            BottomNavigationBarItem(
+              icon: Container(
+                padding: const EdgeInsets.all(5),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(10),
+                  color: _currentIndex == 2
+                      ? Colors.cyanAccent.withOpacity(0.2)
+                      : Colors.transparent,
+                ),
+                child: const Icon(Icons.insert_drive_file),
+              ),
+              label: 'File to Text',
+            ),
+          ],
         ),
       ),
     );
@@ -608,17 +892,15 @@ class _HomePageState extends State<HomePage> {
                       user?.email ?? 'No email',
                       style: const TextStyle(fontSize: 14),
                     ),
-                    currentAccountPicture: const CircleAvatar(
-                      backgroundColor: Colors.cyanAccent,
+                    currentAccountPicture: CircleAvatar(
+                      backgroundColor: Colors.cyanAccent[700],
                       child: Text(
-                        'L',
-                        style: TextStyle(fontSize: 24),
+                        user?.email?.substring(0, 1).toUpperCase() ?? 'U',
+                        style: const TextStyle(fontSize: 24),
                       ),
                     ),
                     decoration: BoxDecoration(
-                      color: Theme.of(context).brightness == Brightness.dark
-                          ? Colors.grey[900]
-                          : Colors.blue[900],
+                      color: Colors.cyanAccent[700]?.withOpacity(0.8),
                     ),
                   );
                 }
@@ -633,17 +915,15 @@ class _HomePageState extends State<HomePage> {
                       user?.email ?? 'No email',
                       style: const TextStyle(fontSize: 14),
                     ),
-                    currentAccountPicture: const CircleAvatar(
-                      backgroundColor: Colors.cyanAccent,
-                      child: Text(
+                    currentAccountPicture: CircleAvatar(
+                      backgroundColor: Colors.cyanAccent[700],
+                      child: const Text(
                         'E',
                         style: TextStyle(fontSize: 24),
                       ),
                     ),
                     decoration: BoxDecoration(
-                      color: Theme.of(context).brightness == Brightness.dark
-                          ? Colors.grey[900]
-                          : Colors.blue[900],
+                      color: Colors.cyanAccent[700]?.withOpacity(0.8),
                     ),
                   );
                 }
@@ -666,7 +946,7 @@ class _HomePageState extends State<HomePage> {
                     style: const TextStyle(fontSize: 14),
                   ),
                   currentAccountPicture: CircleAvatar(
-                    backgroundColor: Colors.cyanAccent,
+                    backgroundColor: Colors.cyanAccent[700],
                     child: photoUrl != null
                         ? ClipOval(
                       child: Image.network(
@@ -690,69 +970,104 @@ class _HomePageState extends State<HomePage> {
                     ),
                   ),
                   decoration: BoxDecoration(
-                    color: Theme.of(context).brightness == Brightness.dark
-                        ? Colors.grey[900]
-                        : Colors.blue[900],
+                    color: Colors.cyanAccent[700]?.withOpacity(0.8),
                   ),
                 );
               },
             ),
-            _buildDrawerItem(
-              icon: Icons.insert_drive_file,
-              text: 'File to Text',
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.pushNamed(context, '/file-to-text');
-              },
+            Expanded(
+              child: ListView(
+                padding: EdgeInsets.zero,
+                children: [
+                  _buildDrawerItem(
+                    icon: Icons.insert_drive_file,
+                    text: 'File to Text',
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.pushNamed(context, '/file-to-text');
+                    },
+                  ),
+                  _buildDrawerItem(
+                    icon: Icons.mic,
+                    text: 'Voice to Text',
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.pushNamed(context, '/voice-to-text');
+                    },
+                  ),
+                  _buildDrawerItem(
+                    icon: Icons.text_snippet,
+                    text: 'Text to Voice',
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.pushNamed(context, '/text-to-voice');
+                    },
+                  ),
+                  const Divider(height: 1),
+                  _buildDrawerItem(
+                    icon: Icons.settings,
+                    text: 'Settings',
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const SettingsPage()),
+                      );
+                    },
+                  ),
+                  _buildDrawerSwitchItem(
+                    icon: Icons.brightness_6,
+                    text: 'Dark Mode',
+                    value: themeProvider.themeMode == ThemeMode.dark,
+                    onChanged: (value) {
+                      themeProvider.toggleTheme(value);
+                    },
+                  ),
+                ],
+              ),
             ),
-            _buildDrawerItem(
-              icon: Icons.mic,
-              text: 'Voice to Text',
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.pushNamed(context, '/voice-to-text');
-              },
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: ElevatedButton.icon(
+                icon: const Icon(Icons.logout, size: 20),
+                label: const Text('Logout'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.red[400],
+                  foregroundColor: Colors.white,
+                  minimumSize: const Size(double.infinity, 50),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                onPressed: () async {
+                  final confirmed = await showDialog<bool>(
+                    context: context,
+                    builder: (context) => AlertDialog(
+                      title: const Text('Confirm Logout'),
+                      content: const Text('Are you sure you want to log out?'),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(context, false),
+                          child: const Text('Cancel'),
+                        ),
+                        TextButton(
+                          onPressed: () => Navigator.pop(context, true),
+                          child: const Text('Logout', style: TextStyle(color: Colors.red)),
+                        ),
+                      ],
+                    ),
+                  );
+
+                  if (confirmed == true) {
+                    await FirebaseAuth.instance.signOut();
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(builder: (context) => LoginOptions()),
+                    );
+                  }
+                },
+              ),
             ),
-            _buildDrawerItem(
-              icon: Icons.text_snippet,
-              text: 'Text to Voice',
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.pushNamed(context, '/text-to-voice');
-              },
-            ),
-            _buildDrawerItem(
-              icon: Icons.settings,
-              text: 'Settings',
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const SettingsPage()),
-                );
-              },
-            ),
-            _buildDrawerSwitchItem(
-              icon: Icons.brightness_6,
-              text: 'Dark Mode',
-              value: themeProvider.themeMode == ThemeMode.dark,
-              onChanged: (value) {
-                themeProvider.toggleTheme(value);
-              },
-            ),
-            const Spacer(),
-            _buildDrawerItem(
-              icon: Icons.logout,
-              text: 'Logout',
-              onTap: () async {
-                await FirebaseAuth.instance.signOut();
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(builder: (context) => LoginOptions()),
-                );
-              },
-            ),
-            const SizedBox(height: 32),
           ],
         ),
       ),
@@ -768,7 +1083,7 @@ class _HomePageState extends State<HomePage> {
       leading: Icon(
         icon,
         size: 24,
-        color: Theme.of(context).iconTheme.color,
+        color: Colors.cyanAccent[700],
       ),
       title: Text(
         text,
@@ -791,7 +1106,7 @@ class _HomePageState extends State<HomePage> {
       leading: Icon(
         icon,
         size: 24,
-        color: Theme.of(context).iconTheme.color,
+        color: Colors.cyanAccent[700],
       ),
       title: Text(
         text,
@@ -803,7 +1118,7 @@ class _HomePageState extends State<HomePage> {
       trailing: Switch(
         value: value,
         onChanged: onChanged,
-        activeColor: Colors.blue,
+        activeColor: Colors.cyanAccent[700],
       ),
     );
   }
@@ -873,8 +1188,7 @@ class _HistoryListView extends StatelessWidget {
                         context: context,
                         builder: (context) => AlertDialog(
                           title: const Text('Confirm Delete'),
-                          content:
-                          const Text('Are you sure you want to delete this item?'),
+                          content: const Text('Are you sure you want to delete this item?'),
                           actions: [
                             TextButton(
                               onPressed: () => Navigator.pop(context, false),
@@ -882,8 +1196,7 @@ class _HistoryListView extends StatelessWidget {
                             ),
                             TextButton(
                               onPressed: () => Navigator.pop(context, true),
-                              child: const Text('Delete',
-                                  style: TextStyle(color: Colors.red)),
+                              child: const Text('Delete', style: TextStyle(color: Colors.red)),
                             ),
                           ],
                         ),
@@ -922,11 +1235,17 @@ class _HistoryListView extends StatelessWidget {
       await doc.reference.delete();
 
       if (doc['audioDownloadUrl'] != null) {
-        final storageRef =
-        FirebaseStorage.instance.refFromURL(doc['audioDownloadUrl']);
+        final storageRef = FirebaseStorage.instance.refFromURL(doc['audioDownloadUrl']);
         await storageRef.delete();
-        debugPrint(
-            'Deleted audio file from Firebase Storage: ${doc['audioDownloadUrl']}');
+        debugPrint('Deleted audio file from Firebase Storage: ${doc['audioDownloadUrl']}');
+      }
+
+      if (doc['audioFilePath'] != null) {
+        final file = File(doc['audioFilePath']);
+        if (await file.exists()) {
+          await file.delete();
+          debugPrint('Deleted local file: ${file.path}');
+        }
       }
     } catch (e) {
       debugPrint('Error deleting item: $e');
@@ -957,15 +1276,18 @@ class _HistoryItemView extends StatefulWidget {
 }
 
 class _HistoryItemViewState extends State<_HistoryItemView> {
+  bool _fileExists = false;
+  bool _isDownloading = false;
   final AudioPlayer _audioPlayer = AudioPlayer();
   bool _isPlaying = false;
-  bool _canPlayAudio = false;
   Duration _position = Duration.zero;
   Duration _duration = Duration.zero;
 
   @override
   void initState() {
     super.initState();
+    _checkPermissions();
+    _checkFileExistence();
     _setupAudioPlayer();
   }
 
@@ -997,36 +1319,156 @@ class _HistoryItemViewState extends State<_HistoryItemView> {
       }
     });
 
-    bool audioLoaded = false;
-
-    // Load audio from audioDownloadUrl
     if (widget.audioDownloadUrl != null) {
       try {
         await _audioPlayer.setUrl(widget.audioDownloadUrl!);
         debugPrint('Loaded audio from URL: ${widget.audioDownloadUrl}');
-        audioLoaded = true;
       } catch (e) {
         debugPrint('Error loading audio from URL: $e');
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to load audio from cloud: $e')),
+          SnackBar(content: Text('Failed to load audio: $e')),
         );
       }
-    } else {
-      debugPrint('No audioDownloadUrl provided');
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Audio file is missing or was not uploaded to the cloud')),
-      );
+    }
+  }
+
+  Future<void> _checkPermissions() async {
+    if (Platform.isAndroid) {
+      final androidInfo = await DeviceInfoPlugin().androidInfo;
+      final sdkInt = androidInfo.version.sdkInt;
+
+      PermissionStatus status;
+      if (sdkInt >= 30) {
+        status = await Permission.manageExternalStorage.status;
+        if (!status.isGranted) {
+          status = await Permission.manageExternalStorage.request();
+          if (!status.isGranted) {
+            _handlePermissionDenied();
+            return;
+          }
+        }
+      } else {
+        status = await Permission.storage.status;
+        if (!status.isGranted) {
+          status = await Permission.storage.request();
+          if (!status.isGranted) {
+            _handlePermissionDenied();
+            return;
+          }
+        }
+      }
+    }
+  }
+
+  void _handlePermissionDenied() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Text('Storage permission is required to download audio files'),
+        action: SnackBarAction(
+          label: 'Settings',
+          onPressed: () {
+            openAppSettings();
+          },
+        ),
+      ),
+    );
+  }
+
+  Future<void> _checkFileExistence() async {
+    if (widget.audioPath == null) {
+      setState(() => _fileExists = false);
+      return;
     }
 
-    setState(() {
-      _canPlayAudio = audioLoaded;
-    });
+    try {
+      final file = File(widget.audioPath!);
+      bool exists = await file.exists();
+      debugPrint('Checking file existence: ${file.path}, exists: $exists');
+      setState(() => _fileExists = exists);
+    } catch (e) {
+      debugPrint('Error checking file: $e');
+      setState(() => _fileExists = false);
+    }
+  }
 
-    if (!audioLoaded && widget.audioDownloadUrl != null) {
-      // Only show this if we tried to load a URL and failed
+  Future<void> _downloadFile() async {
+    if (widget.audioDownloadUrl == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No playable audio source available')),
+        const SnackBar(content: Text('No audio file associated with this item')),
       );
+      return;
+    }
+
+    if (Platform.isAndroid) {
+      final androidInfo = await DeviceInfoPlugin().androidInfo;
+      final sdkInt = androidInfo.version.sdkInt;
+
+      PermissionStatus status;
+      if (sdkInt >= 30) {
+        status = await Permission.manageExternalStorage.status;
+      } else {
+        status = await Permission.storage.status;
+      }
+
+      if (!status.isGranted) {
+        if (sdkInt >= 30) {
+          status = await Permission.manageExternalStorage.request();
+        } else {
+          status = await Permission.storage.request();
+        }
+
+        if (!status.isGranted) {
+          _handlePermissionDenied();
+          return;
+        }
+      }
+    }
+
+    setState(() => _isDownloading = true);
+
+    try {
+      final timestamp = DateTime.now().millisecondsSinceEpoch;
+      final baseFileName = 'TTS_$timestamp.mp3';
+      String newFilePath;
+
+      if (Platform.isAndroid) {
+        final musicDir = Directory('/storage/emulated/0/Music');
+        if (!await musicDir.exists()) {
+          await musicDir.create(recursive: true);
+        }
+        newFilePath = path.join(musicDir.path, baseFileName);
+      } else {
+        final directory = await getApplicationDocumentsDirectory();
+        newFilePath = path.join(directory.path, baseFileName);
+      }
+
+      // Download the file from Firebase Storage
+      final ref = FirebaseStorage.instance.refFromURL(widget.audioDownloadUrl!);
+      final bytes = await ref.getData();
+
+      if (bytes == null) {
+        throw Exception('Failed to download audio data');
+      }
+
+      final file = File(newFilePath);
+      await file.writeAsBytes(bytes);
+
+      if (await file.exists()) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Audio downloaded to Music directory')),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to download audio file')),
+        );
+      }
+    } catch (e) {
+      debugPrint('Download error: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Download error: ${e.toString()}')),
+      );
+    } finally {
+      setState(() => _isDownloading = false);
     }
   }
 
@@ -1067,11 +1509,17 @@ class _HistoryItemViewState extends State<_HistoryItemView> {
           .delete();
 
       if (widget.audioDownloadUrl != null) {
-        final storageRef =
-        FirebaseStorage.instance.refFromURL(widget.audioDownloadUrl!);
+        final storageRef = FirebaseStorage.instance.refFromURL(widget.audioDownloadUrl!);
         await storageRef.delete();
-        debugPrint(
-            'Deleted audio file from Firebase Storage: ${widget.audioDownloadUrl}');
+        debugPrint('Deleted audio file from Firebase Storage: ${widget.audioDownloadUrl}');
+      }
+
+      if (widget.audioPath != null) {
+        final file = File(widget.audioPath!);
+        if (await file.exists()) {
+          await file.delete();
+          debugPrint('Deleted local file: ${file.path}');
+        }
       }
 
       ScaffoldMessenger.of(context).showSnackBar(
@@ -1096,13 +1544,6 @@ class _HistoryItemViewState extends State<_HistoryItemView> {
   Future<void> _seekAudio(double value) async {
     final position = Duration(seconds: value.toInt());
     await _audioPlayer.seek(position);
-  }
-
-  Future<void> _copyText() async {
-    await Clipboard.setData(ClipboardData(text: widget.content));
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Text copied to clipboard')),
-    );
   }
 
   String _formatDuration(Duration duration) {
@@ -1136,7 +1577,6 @@ class _HistoryItemViewState extends State<_HistoryItemView> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Show Audio Playback section if audioDownloadUrl is available
             if (widget.audioDownloadUrl != null) ...[
               Card(
                 child: Padding(
@@ -1157,27 +1597,98 @@ class _HistoryItemViewState extends State<_HistoryItemView> {
                               _isPlaying ? Icons.pause : Icons.play_arrow,
                               size: 32,
                             ),
-                            onPressed: _canPlayAudio ? _playPauseAudio : null,
+                            onPressed: widget.audioDownloadUrl != null ? _playPauseAudio : null,
                           ),
                         ],
                       ),
                       Slider(
                         value: _position.inSeconds.toDouble(),
                         min: 0.0,
-                        max: _duration.inSeconds.toDouble() > 0
-                            ? _duration.inSeconds.toDouble()
-                            : 1.0,
-                        onChanged: _canPlayAudio
-                            ? (value) {
+                        max: _duration.inSeconds.toDouble() > 0 ? _duration.inSeconds.toDouble() : 1.0,
+                        onChanged: (value) {
                           _seekAudio(value);
-                        }
-                            : null,
+                        },
                       ),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(_formatDuration(_position)),
                           Text(_formatDuration(_duration)),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+            ],
+            if (widget.audioPath != null) ...[
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Audio File',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  widget.audioPath!,
+                                  style: TextStyle(
+                                    color: _fileExists ? Colors.green : Colors.red,
+                                  ),
+                                ),
+                                Text(
+                                  _fileExists ? 'File exists' : 'File not found',
+                                  style: TextStyle(
+                                    color: _fileExists ? Colors.green : Colors.red,
+                                  ),
+                                ),
+                                if (_fileExists) ...[
+                                  FutureBuilder<File>(
+                                    future: () async {
+                                      final file = File(widget.audioPath!);
+                                      debugPrint('Checking file in UI: ${file.path}');
+                                      return file;
+                                    }(),
+                                    builder: (context, snapshot) {
+                                      if (snapshot.hasData) {
+                                        return FutureBuilder<int>(
+                                          future: snapshot.data!.length(),
+                                          builder: (context, sizeSnapshot) {
+                                            if (sizeSnapshot.hasData) {
+                                              return Text(
+                                                'Size: ${(sizeSnapshot.data! / 1024).toStringAsFixed(2)} KB',
+                                                style: TextStyle(
+                                                  color: Theme.of(context).textTheme.bodyMedium?.color,
+                                                ),
+                                              );
+                                            }
+                                            return const Text('Calculating size...');
+                                          },
+                                        );
+                                      }
+                                      return const Text('Checking file...');
+                                    },
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ),
+                          ElevatedButton(
+                            onPressed: widget.audioDownloadUrl != null && !_isDownloading ? _downloadFile : null,
+                            child: _isDownloading
+                                ? const CircularProgressIndicator(color: Colors.white)
+                                : const Text('Download'),
+                          ),
                         ],
                       ),
                     ],
@@ -1201,13 +1712,26 @@ class _HistoryItemViewState extends State<_HistoryItemView> {
                       widget.content,
                       style: Theme.of(context).textTheme.bodyLarge,
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 8), // Add some spacing before the button
                     Align(
                       alignment: Alignment.centerRight,
-                      child: TextButton.icon(
-                        icon: const Icon(Icons.copy),
+                      child: ElevatedButton.icon(
+                        onPressed: () {
+                          Clipboard.setData(ClipboardData(text: widget.content));
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Text copied to clipboard')),
+                          );
+                        },
+                        icon: const Icon(Icons.copy, size: 16),
                         label: const Text('Copy Text'),
-                        onPressed: _copyText,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.grey[300], // Light grey background like the image
+                          foregroundColor: Colors.black, // Black text/icon color
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8), // Rounded corners
+                          ),
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        ),
                       ),
                     ),
                   ],

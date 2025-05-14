@@ -134,7 +134,7 @@ class LoginOptions extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Text(
-                'Transcify',
+                'Transcrify',
                 style: TextStyle(
                   fontSize: 32,
                   fontWeight: FontWeight.bold,

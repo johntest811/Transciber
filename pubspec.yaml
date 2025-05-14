@@ -45,8 +45,8 @@ dependencies:
   cloud_functions: ^5.5.0
   connectivity_plus: ^5.0.2
 
-#  Important command
-#  flutter pub add file_picker path_provider flutter_ffmpeg
+  #  Important command
+  #  flutter pub add file_picker path_provider flutter_ffmpeg
 
 
   # The following adds the Cupertino Icons font to your application.
@@ -94,6 +94,7 @@ dev_dependencies:
 flutter_launcher_icons:
   android: "launcher_icon"
   ios: true
+  adaptive_icon_background: "#000000"  # Background color
   image_path: "assets/icon/logo.png"
   minify_icon: true
 
@@ -123,10 +124,10 @@ flutter:
     - assets/icon/logo.png
 
 flutter_native_splash:
-  color: "#000000" # Black background to match SplashScreen.dart
-  image: ""
-  android: true
-  ios: true
+  adaptive_icon_background: "#000000"
+  image: "assets/icon/logo.png"
+  android: false
+  ios: false
 
   #    - assets/models/
   #    - assets/models/whisper.bin
