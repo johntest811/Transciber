@@ -17,4 +17,4 @@ samples, guidance on mobile development, and a full API reference.
 
 ## Nigger
 
-![Alt text](https://www.google.com/url?sa=i&url=https%3A%2F%2Fen.wikipedia.org%2Fwiki%2FLizzo&psig=AOvVaw1lmDL9qTLXghxaabsQIwIt&ust=1747302647490000&source=images&cd=vfe&opi=89978449&ved=0CBQQjRxqFwoTCMi3qt7Xoo0DFQAAAAAdAAAAABAx)
+![Alt text](https://upload.wikimedia.org/wikipedia/commons/2/2f/Glasto2023_%28181_of_468%29_%2853009327490%29_%28cropped%29.jpg)
