@@ -17,4 +17,4 @@ samples, guidance on mobile development, and a full API reference.
 
 ## Nigger
 
-![Alt text](https://www.google.com/url?sa=i&url=https%3A%2F%2Fwww.telegraph.co.uk%2Fmusic%2Fwhat-to-listen-to%2Flizzo-glastonbury-festival-2023-review%2F&psig=AOvVaw1lmDL9qTLXghxaabsQIwIt&ust=1747302647490000&source=images&cd=vfe&opi=89978449&ved=0CBQQjRxqFwoTCMi3qt7Xoo0DFQAAAAAdAAAAABAk)
+![Alt text](https://www.google.com/url?sa=i&url=https%3A%2F%2Fen.wikipedia.org%2Fwiki%2FLizzo&psig=AOvVaw1lmDL9qTLXghxaabsQIwIt&ust=1747302647490000&source=images&cd=vfe&opi=89978449&ved=0CBQQjRxqFwoTCMi3qt7Xoo0DFQAAAAAdAAAAABAx)
